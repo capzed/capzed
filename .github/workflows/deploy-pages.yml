@@ -41,6 +41,30 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: wrangler pages deploy . --project-name automatet-crypto-deals --branch main --commit-dirty=true
+      - name: Read-only preflight for automatet.com domain migration
+        if: success()
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          api="https://api.cloudflare.com/client/v4"
+          for project in automatet automatet-crypto-deals; do
+            echo "Pages custom domains for project: $project"
+            result=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$project/domains")
+            echo "$result" | jq -r 'if .success then (.result[]? | "DOMAIN " + .name + " STATUS " + (.status // "unknown")) else "READ_FAILED " + ((.errors[0].message // "unknown error")) end' 2>/dev/null || echo "READ_FAILED: response could not be parsed"
+          done
+          echo "Zone and apex DNS preflight: automatet.com"
+          zones=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/zones?name=automatet.com")
+          zone_id=$(echo "$zones" | jq -r 'if .success then (.result[0].id // empty) else empty end' 2>/dev/null)
+          if [ -n "$zone_id" ]; then
+            echo "ZONE_READ_OK"
+            dns=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api/zones/$zone_id/dns_records?name=automatet.com")
+            echo "$dns" | jq -r 'if .success then (.result[]? | "DNS " + .type + " " + .name + " -> " + .content + " PROXIED " + (.proxied|tostring)) else "DNS_READ_FAILED " + ((.errors[0].message // "unknown error")) end' 2>/dev/null || echo "DNS_READ_FAILED: response could not be parsed"
+          else
+            echo "ZONE_READ_FAILED: token may not have Zone Read permission"
+          fi
       - name: Verify production website, public APIs and admin protection
         env:
           SMOKE_BASE_URL: https://automatet-crypto-deals.pages.dev
