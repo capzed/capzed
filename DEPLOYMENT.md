@@ -32,3 +32,20 @@ The current API supports public read-only lists and authenticated platform regis
 
 ## Production safety
 The current live domain may still be serving the separate Education site. Do not attach this Pages project to `automatet.com` or modify DNS until the new project has been deployed and tested on its `pages.dev` address, with a rollback plan.
+
+
+## GitHub Actions deployment (manual, isolated preview)
+
+A manual workflow is available at **Actions → Deploy AUTOMATET Crypto Deals → Run workflow**. It deploys only to the separate `automatet-crypto-deals` Pages project and never changes `automatet.com`.
+
+Before running it, add these repository Actions secrets in GitHub:
+- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token scoped to the target account with Cloudflare Pages edit permissions.
+- `CLOUDFLARE_ACCOUNT_ID`: the Cloudflare account ID.
+
+The workflow validates the code, creates the Pages project if it does not exist, then deploys the repository root. It is manual-only; pushes to `main` do not publish automatically.
+
+After the first deployment, add these encrypted variables/secrets in Cloudflare Pages → Settings → Variables and Secrets for the Production environment:
+- `DATABASE_URL`: the pooled connection string for the dedicated Neon `automatet-crypto-deals` database.
+- `ADMIN_API_TOKEN`: a long random secret used only by the editorial console.
+
+Never paste credentials into chat or commit them to GitHub. Keep `automatet.com` untouched until the isolated preview, database API and admin workflow have all been tested.
