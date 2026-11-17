@@ -82,7 +82,7 @@ async function handle(request, env) {
       return json({ data: rows });
     }
 
-    const clickMatch = method === "GET" ? path.match(/^\\/api\\/go\\/([a-z0-9-]+)$/i) : null;
+    const clickMatch = method === "GET" ? path.match(/^\/api\/go\/([a-z0-9-]+)$/i) : null;
     if (clickMatch) {
       const slug = clickMatch[1];
       const rows = await sql`
