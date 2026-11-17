@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler pages dev .",
     "deploy": "wrangler pages deploy . --project-name=automatet-crypto-deals",
-    "check": "node --check 'functions/api/[[route]].js'"
+    "check": "node --check 'functions/api/[[route]].js' && node --check scripts/smoke-test.mjs",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2"
