@@ -109,7 +109,7 @@ async function handle(request, env) {
 
       if (method === "GET" && path === "/api/admin/platforms") {
         const rows = await sql`
-          SELECT id, name, slug, platform_type
+          SELECT id, name, slug, platform_type, website_url, status, description
           FROM platforms ORDER BY name ASC LIMIT 100
         `;
         return json({ data: rows }, 200);
