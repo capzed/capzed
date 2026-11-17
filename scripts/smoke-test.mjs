@@ -27,6 +27,12 @@ const checks = [
     return "Public platforms, promotions and news APIs: OK";
   },
   async () => {
+    const { response, body } = await request("/api/go/this-offer-does-not-exist");
+    assert(response.status === 404 && body.error === "Offer is no longer available",
+      `Affiliate redirect must reject unavailable offers (HTTP ${response.status}).`);
+    return "Affiliate redirect rejects unavailable offers: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/admin/platforms");
     assert(response.status === 401 && body.error === "Unauthorized",
       `Admin API must reject requests without a token (HTTP ${response.status}).`);
