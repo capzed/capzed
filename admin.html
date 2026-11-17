@@ -27,7 +27,7 @@
 <h2>Register a platform</h2>
 <form id="platform">
 <div class="row"><div><label>Platform name</label><input name="name" required></div><div><label>Slug</label><input name="slug" required></div></div>
-<div class="row"><div><label>Type</label><select name="platform_type"><option>CEX</option><option>DEX</option><option>WALLET</option><option>OTHER</option></select></div><div><label>Website URL (HTTPS)</label><input name="website_url" type="url" required></div></div>
+<div class="row"><div><label>Type</label><select name="platform_type"><option>CEX</option><option>DEX</option><option>WALLET</option><option value="PROP_FIRM">PROP FIRM · FUNDED TRADING</option><option>OTHER</option></select></div><div><label>Website URL (HTTPS)</label><input name="website_url" type="url" required></div></div>
 <label>Logo URL (optional)</label><input name="logo_url" type="url">
 <label>Description</label><textarea name="description"></textarea>
 <button type="submit">Create draft platform</button></form>
