@@ -17,7 +17,7 @@ header{position:sticky;top:0;z-index:5;background:#080d19ed;backdrop-filter:blur
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding-bottom:55px}.card{background:linear-gradient(145deg,#111e31,#0d1625);border:1px solid var(--line);border-radius:18px;padding:19px;min-height:230px;display:flex;flex-direction:column;transition:.2s}.card:hover{transform:translateY(-3px);border-color:#50e5d077}.cardtop{display:flex;align-items:center;justify-content:space-between;gap:10px}.publisher{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.8px;text-transform:uppercase}.date{color:#7f91aa;font-size:10px}.card h2{font-size:18px;line-height:1.3;margin:17px 0 9px;letter-spacing:-.3px}.card p{font-size:12px;color:var(--muted);margin:0 0 20px}.source{margin-top:auto;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--cyan);font-weight:800}.empty,.error{grid-column:1/-1;border:1px solid var(--line);border-radius:16px;padding:26px;color:var(--muted);background:#ffffff04}
 .note{border:1px solid var(--line);border-radius:15px;padding:17px 20px;color:var(--muted);font-size:11px;margin-bottom:42px}.note strong{color:var(--text)}footer{border-top:1px solid #ffffff14;padding:28px 0 38px;color:#8192aa;font-size:11px}.footrow{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.navlinks{gap:12px}}@media(max-width:560px){.grid{grid-template-columns:1fr}.nav{height:64px}.navlinks{gap:10px;font-size:11px}.hero{padding-top:42px}.toolbar{align-items:start;flex-direction:column}.hero h1{letter-spacing:-1.7px}}
-</style>
+.publisher-row{display:flex;align-items:center;gap:9px;min-width:0}.publisher-logo{width:34px;height:34px;flex:0 0 34px;border-radius:10px;display:grid;place-items:center;overflow:hidden;background:#0a1525;border:1px solid #ffffff24;color:var(--cyan);font-size:11px;font-weight:900}.publisher-logo img{width:100%;height:100%;object-fit:contain;padding:6px;background:#fff;border-radius:9px}.publisher{overflow:hidden;text-overflow:ellipsis}</style>
 </head>
 <body>
 <header><div class="wrap nav"><a class="brand" href="/"><span class="mark">A</span><span>AUTOMATET</span></a><nav class="navlinks"><a href="/">Home</a><a href="/#deals">Deals</a><a href="/compare.html">Compare</a><a href="/guides.html">Guides</a><a href="/advertise.html">Advertise</a></nav></div></header>
@@ -32,6 +32,12 @@ header{position:sticky;top:0;z-index:5;background:#080d19ed;backdrop-filter:blur
 const grid=document.getElementById('newsGrid'),filters=document.getElementById('filters'),count=document.getElementById('count'),statusLine=document.getElementById('feedStatus');
 let stories=[],activeSource='all';
 function safeDate(value){const d=new Date(value);return Number.isNaN(d.getTime())?'Recent update':d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC'}
+function makePublisherLogo(name,domain){
+ const wrap=document.createElement('span');wrap.className='publisher-logo';
+ const fallback=document.createElement('span');fallback.textContent=(name||'CR').trim().slice(0,2).toUpperCase();wrap.append(fallback);
+ if(domain){const img=document.createElement('img');img.alt=(name||'Publisher')+' logo';img.loading='lazy';img.referrerPolicy='no-referrer';img.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=128';img.onerror=()=>img.remove();wrap.append(img);}
+ return wrap;
+}
 function render(){
  const visible=activeSource==='all'?stories:stories.filter(x=>x.publisher===activeSource);
  count.textContent=visible.length+' stories · newest first';
@@ -40,9 +46,12 @@ function render(){
  for(const item of visible){
   const card=document.createElement('article');card.className='card';
   const top=document.createElement('div');top.className='cardtop';
+  const publisherRow=document.createElement('div');publisherRow.className='publisher-row';
+  const logo=makePublisherLogo(item.publisher,item.publisher_domain);
   const publisher=document.createElement('span');publisher.className='publisher';publisher.textContent=item.publisher||'Crypto news';
+  publisherRow.append(logo,publisher);
   const date=document.createElement('span');date.className='date';date.textContent=safeDate(item.published_at);
-  top.append(publisher,date);
+  top.append(publisherRow,date);
   const title=document.createElement('h2');title.textContent=item.headline;
   const summary=document.createElement('p');summary.textContent=item.summary||'Open the original report for details.';
   const link=document.createElement('a');link.className='source';link.href=item.canonical_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Read original report ↗';
