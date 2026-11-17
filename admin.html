@@ -50,6 +50,17 @@
 <button type="submit">Save as pending</button>
 </form><div id="result" class="status"></div>
 </section>
+<section class="panel hidden" id="newsEditor">
+<h2>Publish a sourced news item</h2>
+<p class="note">Use a short original summary and link directly to the publisher. Do not paste full articles.</p>
+<form id="newsForm">
+<label>Publisher name</label><input name="publisher" required>
+<label>Headline</label><input name="headline" required>
+<label>Short original summary</label><textarea name="summary"></textarea>
+<label>Original article URL (HTTPS)</label><input name="canonical_url" type="url" required>
+<div class="row"><div><label>Image URL (optional, HTTPS)</label><input name="image_url" type="url"></div><div><label>Publication time (ISO, optional)</label><input name="published_at" placeholder="2026-11-17T08:00:00Z"></div></div>
+<button type="submit">Publish sourced headline</button></form><div id="newsResult" class="status"></div>
+</section>
 <section class="panel hidden" id="queue">
 <h2>Pending review</h2><button id="refresh">Refresh queue</button><div id="items" class="status">No data loaded.</div>
 </section>
@@ -70,7 +81,7 @@ $("connect").addEventListener("click", async () => {
   try {
     await api("/api/health");
     $("connection").textContent = "Connected to API and database.";
-    $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden");
+    $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden");
     await loadPlatforms(); await loadQueue();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
@@ -108,6 +119,14 @@ async function changeStatus(id,status){
   catch(e) { $("items").textContent=e.message; }
 }
 $("refresh").addEventListener("click",loadQueue);
+$("newsForm").addEventListener("submit", async (event) => {
+  event.preventDefault(); const body=Object.fromEntries(new FormData(event.currentTarget).entries());
+  body.published_at=body.published_at||null;
+  try { const result=await api("/api/admin/news",{method:"POST",body:JSON.stringify(body)});
+    $("newsResult").textContent=JSON.stringify(result,null,2); event.currentTarget.reset();
+  } catch(e) { $("newsResult").textContent=e.message; }
+});
+
 $("platform").addEventListener("submit", async (event) => {
   event.preventDefault(); const body=Object.fromEntries(new FormData(event.currentTarget).entries());
   try { const result=await api("/api/admin/platforms",{method:"POST",body:JSON.stringify(body)});
