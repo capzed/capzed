@@ -22,9 +22,14 @@ function getDb(env) {
 function authorized(request, env) {
   const expected = env.ADMIN_API_TOKEN;
   const supplied = request.headers.get("authorization") || "";
-  return Boolean(expected && supplied.startsWith("Bearer ") &&
-    supplied.slice(7).length === expected.length &&
-    supplied.slice(7) === expected);
+  if (!expected || !supplied.startsWith("Bearer ")) return false;
+  const candidate = supplied.slice(7);
+  if (candidate.length !== expected.length) return false;
+  let difference = 0;
+  for (let i = 0; i < expected.length; i++) {
+    difference |= expected.charCodeAt(i) ^ candidate.charCodeAt(i);
+  }
+  return difference === 0;
 }
 
 async function handle(request, env) {
