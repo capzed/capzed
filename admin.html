@@ -33,14 +33,15 @@
 <button type="submit">Create draft platform</button></form>
 <div id="platformResult" class="status"></div><div id="platformList" class="status">No platforms loaded.</div>
 <hr style="border:0;border-top:1px solid #263752;margin:22px 0">
-<h2>Algeria eligibility evidence</h2>
-<p class="note">Only confirm availability or restrictions when an official source explicitly supports the status. Otherwise leave it as Not yet verified.</p>
+<h2>Global regional availability evidence</h2>
+<p class="note">Track availability by country for every platform. Use ISO 3166-1 alpha-2 country codes (for example US, GB, DE, SG). Only confirm a status when an official source supports it.</p>
 <form id="regionForm">
 <label>Platform</label><select name="platform_id" id="regionPlatform" required><option value="">Choose a platform</option></select>
+<label>Country code (ISO alpha-2)</label><input name="country_code" required minlength="2" maxlength="2" pattern="[A-Za-z]{2}" placeholder="US" style="text-transform:uppercase">
 <label>Regional status</label><select name="availability_status"><option value="unknown">Not yet verified</option><option value="available">Confirmed available</option><option value="restricted">Restrictions reported</option><option value="unavailable">Confirmed unavailable</option></select>
 <label>Official evidence URL (HTTPS; required for confirmed status)</label><input name="evidence_url" type="url">
 <label>Notes / exact terms</label><textarea name="notes"></textarea>
-<button type="submit">Save Algeria eligibility record</button>
+<button type="submit">Save country availability record</button>
 </form><div id="regionResult" class="status"></div><div id="regionList" class="status">No regional records loaded.</div>
 <hr style="border:0;border-top:1px solid #263752;margin:22px 0">
 <h2>Official trading fee schedule</h2>
@@ -180,15 +181,17 @@ async function loadRegions(){
   const result=await api("/api/admin/regions");
   const select=$("regionPlatform");select.textContent="";
   const empty=document.createElement("option");empty.value="";empty.textContent="Choose a platform";select.append(empty);
-  host.textContent="";
+  const seen=new Set();host.textContent="";
   for(const item of result.data){
-   const option=document.createElement("option");option.value=item.platform_id;option.textContent=item.platform_name;select.append(option);
+   if(!seen.has(item.platform_id)){seen.add(item.platform_id);const option=document.createElement("option");option.value=item.platform_id;option.textContent=item.platform_name;select.append(option);}
+   if(!item.country_code)continue;
    const row=document.createElement("div");row.style.cssText="padding:8px 0;border-bottom:1px solid #263752";
-   const name=document.createElement("strong");name.textContent=item.platform_name;
+   const name=document.createElement("strong");name.textContent=item.platform_name+" · "+item.country_code;
    const status=document.createElement("p");status.className="note";
    status.textContent=(item.availability_status||"unknown")+" · "+(item.checked_at?"checked "+new Date(item.checked_at).toLocaleDateString():"not checked")+(item.evidence_url?" · official evidence saved":" · no evidence");
    row.append(name,status);host.append(row);
   }
+  if(!host.children.length)host.textContent="No country records yet. Add the first verified country above.";
  }catch(e){host.textContent=e.message;}
 }
 async function loadFees(){
@@ -214,8 +217,9 @@ $("feeForm").addEventListener("submit",async(event)=>{
 });
 $("regionForm").addEventListener("submit",async(event)=>{
  event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
- const id=body.platform_id;delete body.platform_id;body.evidence_url=body.evidence_url||null;body.notes=body.notes||null;
- try{const result=await api("/api/admin/platforms/"+id+"/region/DZ",{method:"PATCH",body:JSON.stringify(body)});
+ const id=body.platform_id;const country=(body.country_code||"").trim().toUpperCase();delete body.platform_id;delete body.country_code;body.evidence_url=body.evidence_url||null;body.notes=body.notes||null;
+ if(!/^[A-Z]{2}$/.test(country)){$("regionResult").textContent="Enter a valid two-letter ISO country code.";return;}
+ try{const result=await api("/api/admin/platforms/"+id+"/region/"+country,{method:"PATCH",body:JSON.stringify(body)});
  $("regionResult").textContent=JSON.stringify(result,null,2);await loadRegions();}
  catch(e){$("regionResult").textContent=e.message;}
 });
