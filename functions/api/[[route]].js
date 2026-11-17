@@ -162,6 +162,24 @@ async function handle(request, env) {
       return json({ data: rows[0] });
     }
 
+    if (method === "GET" && path === "/api/prop-firm-programs") {
+      const rows = await sql`
+        SELECT pf.id, pf.program_name, pf.funding_model, pf.account_sizes, pf.challenge_fee,
+               pf.phase1_profit_target_pct, pf.phase2_profit_target_pct,
+               pf.daily_drawdown_pct, pf.max_drawdown_pct, pf.drawdown_type,
+               pf.profit_split_min_pct, pf.profit_split_max_pct, pf.payout_frequency,
+               pf.min_trading_days, pf.news_trading_policy, pf.weekend_holding,
+               pf.consistency_rule, pf.max_leverage, pf.rules_url, pf.source_url,
+               pf.verified_at, pf.notes, p.slug AS platform_slug, p.name AS firm_name,
+               p.website_url, p.logo_url
+        FROM prop_firm_programs pf
+        JOIN platforms p ON p.id = pf.platform_id
+        WHERE pf.status = 'verified' AND p.status = 'published'
+          AND p.platform_type = 'PROP_FIRM'
+        ORDER BY p.name, pf.program_name LIMIT 200
+      `;
+      return json({ data: rows });
+    }
     if (method === "GET" && path === "/api/promotions") {
       const rows = await sql`
         SELECT p.id, p.slug, p.title, p.summary, p.offer_type, p.reward_amount,
@@ -515,6 +533,60 @@ async function handle(request, env) {
         return json({ data: rows }, 200);
       }
 
+      if (method === "GET" && path === "/api/admin/prop-firm-programs") {
+        const rows = await sql`
+          SELECT pf.*, p.name AS firm_name
+          FROM prop_firm_programs pf JOIN platforms p ON p.id = pf.platform_id
+          ORDER BY pf.updated_at DESC LIMIT 200
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "POST" && path === "/api/admin/prop-firm-programs") {
+        const body = await request.json();
+        const numericFields = ["phase1_profit_target_pct","phase2_profit_target_pct","daily_drawdown_pct","max_drawdown_pct","profit_split_min_pct","profit_split_max_pct","max_leverage"];
+        const allowedModels = ["1-step","2-step","3-step","instant","other"];
+        if (!body.platform_id || !String(body.program_name || "").trim() ||
+            !allowedModels.includes(body.funding_model) || !isHttps(body.rules_url || "") ||
+            !isHttps(body.source_url || "")) {
+          return fail("Firm, program name, funding model, official rules URL and verification source URL are required");
+        }
+        for (const key of numericFields) {
+          if (body[key] !== null && body[key] !== undefined && body[key] !== "" &&
+              (!Number.isFinite(Number(body[key])) || Number(body[key]) < 0 || Number(body[key]) > 1000)) {
+            return fail("Invalid numeric value for " + key);
+          }
+        }
+        const accountSizes = Array.isArray(body.account_sizes) ? body.account_sizes.slice(0,30) : [];
+        const challengeFee = body.challenge_fee && typeof body.challenge_fee === "object" && !Array.isArray(body.challenge_fee) ? body.challenge_fee : {};
+        const rows = await sql`
+          INSERT INTO prop_firm_programs
+            (platform_id, program_name, funding_model, account_sizes, challenge_fee,
+             phase1_profit_target_pct, phase2_profit_target_pct, daily_drawdown_pct,
+             max_drawdown_pct, drawdown_type, profit_split_min_pct, profit_split_max_pct,
+             payout_frequency, min_trading_days, news_trading_policy, weekend_holding,
+             consistency_rule, max_leverage, rules_url, source_url, notes, status, verified_at)
+          VALUES
+            (${body.platform_id}, ${String(body.program_name).trim().slice(0,160)}, ${body.funding_model},
+             ${JSON.stringify(accountSizes)}::jsonb, ${JSON.stringify(challengeFee)}::jsonb,
+             ${body.phase1_profit_target_pct === "" ? null : body.phase1_profit_target_pct ?? null},
+             ${body.phase2_profit_target_pct === "" ? null : body.phase2_profit_target_pct ?? null},
+             ${body.daily_drawdown_pct === "" ? null : body.daily_drawdown_pct ?? null},
+             ${body.max_drawdown_pct === "" ? null : body.max_drawdown_pct ?? null},
+             ${body.drawdown_type || null},
+             ${body.profit_split_min_pct === "" ? null : body.profit_split_min_pct ?? null},
+             ${body.profit_split_max_pct === "" ? null : body.profit_split_max_pct ?? null},
+             ${body.payout_frequency || null},
+             ${body.min_trading_days === "" ? null : body.min_trading_days ?? null},
+             ${body.news_trading_policy || null},
+             ${body.weekend_holding === true || body.weekend_holding === "true" ? true : body.weekend_holding === false || body.weekend_holding === "false" ? false : null},
+             ${body.consistency_rule || null},
+             ${body.max_leverage === "" ? null : body.max_leverage ?? null},
+             ${body.rules_url}, ${body.source_url}, ${body.notes || null}, 'draft', NULL)
+          RETURNING id, program_name, funding_model, status
+        `;
+        return json({ data: rows[0], message: "Prop firm program saved as draft pending source review." }, 201);
+      }
       if (method === "GET" && path === "/api/admin/platforms") {
         const rows = await sql`
           SELECT id, name, slug, platform_type, website_url, status, description
