@@ -267,5 +267,8 @@ export async function onRequest(context) {
   headers.set("content-security-policy", "default-src 'none'; frame-ancestors 'none'");
   headers.set("referrer-policy", "strict-origin-when-cross-origin");
   headers.set("x-frame-options", "DENY");
+  if (new URL(context.request.url).pathname.startsWith("/api/admin/")) {
+    headers.set("cache-control", "no-store");
+  }
   return new Response(response.body, { status: response.status, headers });
 }
