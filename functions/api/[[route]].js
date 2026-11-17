@@ -541,7 +541,7 @@ async function handle(request, env) {
 
       if (method === "POST" && path === "/api/admin/platforms") {
         const body = await request.json();
-        if (!["CEX","DEX","WALLET","OTHER"].includes(body.platform_type) ||
+        if (!["CEX","DEX","WALLET","PROP_FIRM","OTHER"].includes(body.platform_type) ||
             !body.slug?.trim() || !body.name?.trim() || !isHttps(body.website_url || "")) {
           return fail("Provide a name, slug, valid platform type, and HTTPS website URL");
         }
