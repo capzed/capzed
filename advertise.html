@@ -45,10 +45,10 @@ const form=document.getElementById("leadForm"),result=document.getElementById("r
 form.addEventListener("submit",async event=>{
  event.preventDefault();const button=form.querySelector("button");button.disabled=true;button.textContent="Sending…";
  const body=Object.fromEntries(new FormData(form).entries());body.source_page="/advertise.html";body.website_url=body.website_url||null;
- const brief=[["Target markets",body.target_markets],["Campaign objective",body.campaign_objective],["Indicative budget",body.budget],["Preferred timing",body.campaign_timing]].filter(([,v])=>v).map(([k,v])=>k+": "+v).join("\\n");
- body.message=(brief?brief+"\\n\\n":"")+body.message;
- const brief=[["Target markets",body.target_markets],["Campaign objective",body.campaign_objective],["Indicative budget",body.budget],["Preferred timing",body.campaign_timing]].filter(([,v])=>v).map(([k,v])=>k+": "+v).join("\\n");
- body.message=(brief?brief+"\\n\\n":"")+body.message;
+ const brief=[["Target markets",body.target_markets],["Campaign objective",body.campaign_objective],["Indicative budget",body.budget],["Preferred timing",body.campaign_timing]].filter(([,v])=>v).map(([k,v])=>k+": "+v).join("\n");
+ body.message=(brief?brief+"\n\n":"")+body.message;
+ const brief=[["Target markets",body.target_markets],["Campaign objective",body.campaign_objective],["Indicative budget",body.budget],["Preferred timing",body.campaign_timing]].filter(([,v])=>v).map(([k,v])=>k+": "+v).join("\n");
+ body.message=(brief?brief+"\n\n":"")+body.message;
  try{const response=await fetch("/api/advertiser-leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not send inquiry");result.textContent=data.message||"Inquiry received. Thank you.";form.reset();}
  catch(error){result.textContent=error.message;}
  finally{button.disabled=false;button.textContent="Send partnership inquiry ↗";}
