@@ -59,7 +59,7 @@ async function refreshRssNews(sql) {
     try {
       const response = await fetch(source.feed_url, {
         headers: { "accept": "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.5", "user-agent": "AUTOMATET-NewsBot/1.0 (+https://automatet.com)" },
-        signal: AbortSignal.timeout(7000)
+        signal: AbortSignal.timeout(3500)
       });
       if (!response.ok) throw new Error("RSS response " + response.status);
       const xml = await response.text();
