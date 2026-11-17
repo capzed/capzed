@@ -48,6 +48,24 @@ const checks = [
     return "Public APIs and populated, source-linked news feed: OK";
   },
   async () => {
+    const { response, body } = await request("/api/platforms");
+    assert(response.ok && Array.isArray(body.data), "Regional availability API did not return platform data.");
+    assert(response.headers.get("cache-control")?.includes("no-store"),
+      "Visitor-specific platform data must not be shared-cached.");
+    for (const platform of body.data) {
+      const country = platform.visitor_country_code;
+      assert(country === null || /^[A-Z]{2}$/.test(country),
+        "Visitor country code is invalid.");
+      assert(Array.isArray(platform.regional_availability),
+        "Regional availability must be an array.");
+      assert(platform.regional_availability.every(item => item.country_code === country),
+        "Regional availability exposed a country other than the current visitor's country.");
+      if (!country) assert(platform.regional_availability.length === 0,
+        "Regional records must be hidden when visitor country is unknown.");
+    }
+    return "Regional availability is scoped to the visitor country and not shared-cached: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/prop-firm-programs");
     assert(response.ok && Array.isArray(body.data), `Prop firm API did not return a data array (HTTP ${response.status}).`);
     assert(body.data.length >= 1, "Verified prop firm programme feed is empty.");
