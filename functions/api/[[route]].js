@@ -140,6 +140,34 @@ async function handle(request, env) {
         return json({ data: rows[0], message: "Platform created as draft." }, 201);
       }
 
+      if (method === "POST" && path === "/api/admin/news") {
+        const body = await request.json();
+        if (!body.publisher?.trim() || !body.headline?.trim() ||
+            !body.canonical_url || !isHttps(body.canonical_url)) {
+          return fail("Publisher, headline, and an HTTPS canonical URL are required");
+        }
+        const parsed = new URL(body.canonical_url);
+        const domain = parsed.hostname.toLowerCase();
+        const found = await sql`SELECT id FROM news_sources WHERE domain = ${domain} LIMIT 1`;
+        const sourceRows = found.length ? found : await sql`
+          INSERT INTO news_sources (name, domain, source_type)
+          VALUES (${body.publisher.trim()}, ${domain}, 'manual')
+          RETURNING id
+        `;
+        const rows = await sql`
+          INSERT INTO news (source_id, canonical_url, headline, summary, image_url, published_at, status)
+          VALUES (${sourceRows[0].id}, ${body.canonical_url}, ${body.headline.trim()},
+                  ${body.summary || null}, ${body.image_url && isHttps(body.image_url) ? body.image_url : null},
+                  ${body.published_at || null}, 'published')
+          ON CONFLICT (canonical_url) DO UPDATE SET
+            source_id = EXCLUDED.source_id, headline = EXCLUDED.headline,
+            summary = EXCLUDED.summary, published_at = EXCLUDED.published_at,
+            status = 'published'
+          RETURNING id, headline, canonical_url, published_at
+        `;
+        return json({ data: rows[0] }, 201);
+      }
+
       if (method === "POST" && path === "/api/admin/promotions") {
         const body = await request.json();
         const required = ["platform_id", "slug", "title", "summary", "offer_type", "terms_url", "landing_url", "source_url"];
