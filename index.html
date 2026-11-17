@@ -45,7 +45,7 @@ footer{border-top:1px solid #ffffff14;margin-top:30px;padding:30px 0 38px}.footr
 <div class="searchbar" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><input id="platformSearch" type="search" placeholder="Search a platform…" aria-label="Search platforms" style="flex:1;min-width:220px;background:#0c1525;border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--text);font:inherit"><select id="platformType" aria-label="Filter platform type" style="background:#0c1525;border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--text)"><option value="all">All types</option><option value="CEX">Centralized exchanges</option><option value="DEX">Decentralized exchanges</option><option value="WALLET">Wallets</option></select></div>
 <div class="cards" id="platformGrid"><article class="deal" style="grid-column:1/-1"><h3>Platform catalogue</h3><p>Published platform profiles will appear here after editorial review.</p></article></div></section>
 <section id="compare"><div class="sectionhead"><div><div class="kicker">Make informed choices</div><h2>Compare before you join</h2><p>Understand the differences between centralized and decentralized platforms.</p></div></div><div class="compare"><div class="comparebox"><div class="kicker">Centralized exchanges</div><h3>CEX platforms</h3><p>Compare trading fees, products, supported assets, deposit methods and promotional terms.</p><div class="chips"><span class="chip">Trading fees</span><span class="chip">Welcome rewards</span><span class="chip">Markets</span><span class="chip">Security features</span></div></div><div class="comparebox"><div class="kicker">Decentralized exchanges</div><h3>DEX protocols</h3><p>Compare networks, swap costs, liquidity, supported wallets and protocol features.</p><div class="chips"><span class="chip">Network fees</span><span class="chip">Liquidity</span><span class="chip">Supported chains</span><span class="chip">Self-custody</span></div></div></div></section>
-<div class="adslot">ADVERTISEMENT · YOUR BRAND COULD BE HERE</div>
+<div class="adslot" id="ad-inline">ADVERTISEMENT · YOUR BRAND COULD BE HERE</div>
 <section id="news"><div class="sectionhead"><div><div class="kicker">The crypto pulse</div><h2>Latest news</h2><p>News cards will show sourced headlines, publication times and links to original publishers.</p></div><span class="textlink">News desk</span></div><div class="newsgrid" id="newsgrid"><article class="news"><div class="newsvisual">MARKET MOVES · NEWS DESK</div><div class="newsbody"><small>LIVE NEWS FEED · COMING SOON</small><h3>Market headlines, without the noise</h3><p>Verified crypto headlines with source attribution and direct links to publishers.</p></div></article><article class="news"><div class="newsvisual">REGULATION & POLICY</div><div class="newsbody"><small>REGULATION</small><h3>Policy and regulatory updates</h3><p>Follow developments that matter to exchanges and digital assets.</p></div></article><article class="news"><div class="newsvisual">EXCHANGE UPDATES</div><div class="newsbody"><small>EXCHANGE NEWS</small><h3>Platform launches and announcements</h3><p>Product releases, listings and official exchange updates.</p></div></article></div></section>
 <section id="partners"><div class="join"><div><div class="kicker">Community & partnerships</div><h2>Let's grow the crypto space together.</h2><p>Join our Telegram community, follow our updates or partner with AUTOMATET.</p></div><div class="actions" style="margin:0"><a class="btn primary" href="https://t.me/automatetrades" target="_blank" rel="noopener">Join Telegram ↗</a><a class="btn secondary" href="https://x.com/automatetdotcom" target="_blank" rel="noopener">Follow on X ↗</a><a class="btn secondary" href="/partners.html">Advertise / Partner ↗</a></div></div></section>
 </main>
@@ -127,6 +127,28 @@ async function loadVerifiedPromotions(){
   }
  }catch(_error){}
 }
-loadPlatforms();loadLatestNews();loadVerifiedPromotions();
+async function loadAdPlacement(placement){
+ const host=document.getElementById(placement==="top"?"ad-top":"ad-inline");if(!host)return;
+ try{
+  const response=await fetch("/api/ads?placement="+encodeURIComponent(placement),{headers:{accept:"application/json"}});
+  if(!response.ok)return;
+  const payload=await response.json();if(!Array.isArray(payload.data)||!payload.data.length)return;
+  const item=payload.data[0];host.textContent="";host.classList.add("sponsored-ad");
+  host.style.cssText="min-height:88px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;border-style:solid;text-align:left";
+  const copy=document.createElement("div");copy.style.cssText="display:flex;flex-direction:column;gap:3px;min-width:0";
+  const label=document.createElement("small");label.textContent=item.sponsor_label||"Sponsored";label.style.cssText="color:#50e5d0;font-weight:900;letter-spacing:1px;text-transform:uppercase";
+  const name=document.createElement("strong");name.textContent=item.name;name.style.cssText="font-size:15px;color:#f2f6ff";
+  const disclosure=document.createElement("small");disclosure.textContent="Paid partner placement";disclosure.style.color="#9aaac2";
+  copy.append(label,name,disclosure);host.append(copy);
+  if(item.creative_url){
+   const image=document.createElement("img");image.src=item.creative_url;image.alt=item.name;image.loading="lazy";
+   image.style.cssText="max-width:110px;max-height:58px;object-fit:contain;border-radius:8px";host.append(image);
+  }
+  const link=document.createElement("a");link.href="/api/ad-go/"+encodeURIComponent(item.id);link.textContent="Discover ↗";
+  link.style.cssText="white-space:nowrap;color:#07131b;background:linear-gradient(110deg,#50e5d0,#9cf0d7);padding:10px 14px;border-radius:9px;font-size:12px;font-weight:900";
+  link.rel="sponsored noopener noreferrer";host.append(link);
+ }catch(_error){}
+}
+loadPlatforms();loadLatestNews();loadVerifiedPromotions();loadAdPlacement('top');loadAdPlacement('inline');
 </script>
 </body></html>
