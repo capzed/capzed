@@ -133,7 +133,7 @@ async function handle(request, env) {
       return json({ data: rows });
     }
 
-    const adClickMatch = method === "GET" ? path.match(/^\\/api\\/ad-go\\/([0-9a-f-]{36})$/i) : null;
+    const adClickMatch = method === "GET" ? path.match(/^\/api\/ad-go\/([0-9a-f-]{36})$/i) : null;
     if (adClickMatch) {
       const rows = await sql`
         SELECT id, target_url FROM ad_campaigns
@@ -216,7 +216,7 @@ async function handle(request, env) {
         return json({ data: rows[0], message: "Campaign saved as draft. Activate it after checking the advertiser and creative." }, 201);
       }
 
-      const adStatusMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/ads\\/([0-9a-f-]{36})\\/status$/i) : null;
+      const adStatusMatch = method === "PATCH" ? path.match(/^\/api\/admin\/ads\/([0-9a-f-]{36})\/status$/i) : null;
       if (adStatusMatch) {
         const body = await request.json();
         if (!["draft", "scheduled", "active", "paused", "completed"].includes(body.status)) return fail("Invalid campaign status");
