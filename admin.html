@@ -115,10 +115,27 @@ $("platform").addEventListener("submit", async (event) => {
   } catch(e) { $("platformResult").textContent=e.message; }
 });
 async function loadPlatforms(){
+  const host=$("platformList"); host.textContent="Loading…";
   try {
     const result=await api("/api/admin/platforms");
     $("platformSelect").innerHTML='<option value="">Choose a platform</option>'+result.data.map(p=>'<option value="'+p.id+'">'+p.name+' ('+p.platform_type+')</option>').join("");
-    $("platformList").textContent=result.data.length?result.data.map(p=>p.name+" · "+p.platform_type+" · "+p.status+" · "+p.id).join("\\n"):"No platforms yet.";
-  } catch(e) { $("platformList").textContent=e.message; }
+    host.textContent="";
+    if(!result.data.length){host.textContent="No platforms yet.";return;}
+    for(const p of result.data){
+      const line=document.createElement("div"); line.style.cssText="padding:10px 0;border-bottom:1px solid #263752";
+      const label=document.createElement("span"); label.textContent=p.name+" · "+p.platform_type+" · "+p.status+" · "+p.id+" ";
+      line.append(label);
+      if(p.status!=="published"){
+        const publish=document.createElement("button"); publish.textContent="Publish platform"; publish.style.marginLeft="8px";
+        publish.addEventListener("click",async()=>{
+          if(!confirm("Confirm this platform's official website and details have been checked?"))return;
+          try{await api("/api/admin/platforms/"+p.id+"/status",{method:"PATCH",body:JSON.stringify({status:"published"})});await loadPlatforms();}
+          catch(e){host.textContent=e.message;}
+        });
+        line.append(publish);
+      }
+      host.append(line);
+    }
+  } catch(e) { host.textContent=e.message; }
 }
 </script></body></html>
