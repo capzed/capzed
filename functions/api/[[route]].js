@@ -1,10 +1,10 @@
 import { neon } from "@neondatabase/serverless";
 
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
+const json = (data, status = 200, cacheControl = null) => new Response(JSON.stringify(data), {
   status,
   headers: {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": status === 200 ? "public, max-age=60, s-maxage=120" : "no-store",
+    "cache-control": cacheControl || (status === 200 ? "public, max-age=60, s-maxage=120" : "no-store"),
     "x-content-type-options": "nosniff",
   },
 });
@@ -115,6 +115,8 @@ async function handle(request, env) {
     }
 
     if (method === "GET" && path === "/api/platforms") {
+      const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
+      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && visitorCountryCode !== "T1" ? visitorCountryCode : null;
       const rows = await sql`
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
                (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
@@ -124,18 +126,20 @@ async function handle(request, env) {
                (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
                (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
                (SELECT COALESCE(json_agg(json_build_object('country_code', r.country_code, 'status', r.availability_status,
-                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)
-                         ORDER BY r.country_code), '[]'::json)
-                  FROM platform_region_availability r WHERE r.platform_id = platforms.id) AS regional_availability
+                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)), '[]'::json)
+                  FROM platform_region_availability r
+                 WHERE r.platform_id = platforms.id AND ${countryCode} IS NOT NULL AND r.country_code = ${countryCode}) AS regional_availability
         FROM platforms WHERE status = 'published'
         ORDER BY name ASC LIMIT 100
       `;
-      return json({ data: rows });
+      return json({ data: rows.map(row => ({ ...row, visitor_country_code: countryCode })) }, 200, "private, no-store");
     }
 
     const platformDetailMatch = method === "GET" ? path.match(/^\/api\/platforms\/([a-z0-9-]+)$/i) : null;
     if (platformDetailMatch) {
       const slug = platformDetailMatch[1];
+      const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
+      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && visitorCountryCode !== "T1" ? visitorCountryCode : null;
       const rows = await sql`
         SELECT p.id, p.slug, p.name, p.platform_type, p.website_url, p.logo_url,
                p.description,
@@ -149,9 +153,9 @@ async function handle(request, env) {
                   FROM platform_categories pc JOIN categories c ON c.id = pc.category_id
                  WHERE pc.platform_id = p.id) AS categories,
                (SELECT COALESCE(json_agg(json_build_object('country_code', r.country_code, 'status', r.availability_status,
-                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)
-                         ORDER BY r.country_code), '[]'::json)
-                  FROM platform_region_availability r WHERE r.platform_id = p.id) AS regional_availability,
+                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)), '[]'::json)
+                  FROM platform_region_availability r
+                 WHERE r.platform_id = p.id AND ${countryCode} IS NOT NULL AND r.country_code = ${countryCode}) AS regional_availability,
                (SELECT count(*)::int FROM promotions pr
                  WHERE pr.platform_id = p.id AND pr.status = 'verified'
                    AND (pr.starts_at IS NULL OR pr.starts_at <= now())
@@ -159,7 +163,7 @@ async function handle(request, env) {
         FROM platforms p WHERE p.slug = ${slug} AND p.status = 'published' LIMIT 1
       `;
       if (!rows.length) return fail("Platform not found", 404);
-      return json({ data: rows[0] });
+      return json({ data: { ...rows[0], visitor_country_code: countryCode } }, 200, "private, no-store");
     }
 
     if (method === "GET" && path === "/api/prop-firm-programs") {
