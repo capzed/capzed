@@ -235,7 +235,7 @@ async function handle(request, env) {
         return json({ data: rows }, 200);
       }
 
-      const leadStatusMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/advertiser-leads\\/([0-9a-f-]{36})\\/status$/i) : null;
+      const leadStatusMatch = method === "PATCH" ? path.match(/^\/api\/admin\/advertiser-leads\/([0-9a-f-]{36})\/status$/i) : null;
       if (leadStatusMatch) {
         const body = await request.json();
         if (!["new", "contacted", "qualified", "declined", "converted"].includes(body.status)) {
