@@ -26,9 +26,9 @@ npm run dev
 ```
 
 ## Admin
-Open `/admin.html`, enter the secret token, then register platforms as drafts. Submit promotions; they are saved as pending and are not public. Use SQL or a future moderation workflow to publish platforms (set `status='published'`) and verify promotions only after checking official terms.
+Open `/admin.html`, enter the `ADMIN_API_TOKEN`, then register platforms as drafts. Check their official identity and website before publishing. Submit promotions; they are saved as pending and are not public until you verify them from the pending queue. Sourced headlines can be entered manually with the publisher and original article URL.
 
-The current API supports public read-only lists and authenticated platform/promotion creation plus promotion status changes. It does not yet implement ad billing, newsletter sending, automatic news ingestion, or full role-based authentication.
+The current API supports public read-only lists and authenticated platform registration, platform publication, promotion submission/moderation, and manual sourced-news publishing. It does not yet implement ad billing, newsletter sending, automatic news ingestion, or full role-based authentication. The editorial token is a single shared secret; add individual admin identities and role-based access before inviting external editors.
 
 ## Production safety
 The current live domain may still be serving the separate Education site. Do not attach this Pages project to `automatet.com` or modify DNS until the new project has been deployed and tested on its `pages.dev` address, with a rollback plan.
