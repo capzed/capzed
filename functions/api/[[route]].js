@@ -181,6 +181,37 @@ async function handle(request, env) {
       }});
     }
 
+    if (method === "POST" && path === "/api/advertiser-leads") {
+      const body = await request.json();
+      if (String(body.company_fax || "").trim()) {
+        return json({ message: "Thank you. Your inquiry has been received." }, 201);
+      }
+      const email = String(body.contact_email || "").trim();
+      const allowed = ["sponsored_placement", "affiliate_partnership", "featured_offer", "campaign_reporting", "other"];
+      if (!String(body.company_name || "").trim() || !String(body.contact_name || "").trim() ||
+          !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+          !allowed.includes(body.interest_type) || String(body.message || "").trim().length < 10) {
+        return fail("Please provide company, contact, valid email, inquiry type and a message of at least 10 characters");
+      }
+      if (body.website_url && !isHttps(body.website_url)) return fail("Website URL must use HTTPS");
+      if ([body.company_name, body.contact_name, email, body.message].some(v => String(v).length > 2000)) {
+        return fail("One or more fields are too long");
+      }
+      await sql`
+        INSERT INTO advertiser_leads
+          (company_name, contact_name, contact_email, website_url, interest_type, message, source_page)
+        VALUES
+          (${String(body.company_name).trim().slice(0,160)},
+           ${String(body.contact_name).trim().slice(0,120)},
+           ${email.slice(0,180)},
+           ${body.website_url || null},
+           ${body.interest_type},
+           ${String(body.message).trim().slice(0,2000)},
+           ${String(body.source_page || "/advertise.html").slice(0,160)})
+      `;
+      return json({ message: "Thank you. Your inquiry has been received." }, 201);
+    }
+
     if (method === "GET" && path === "/api/news") {
       const rows = await sql`
         SELECT n.id, n.headline, n.summary, n.canonical_url, n.image_url,
@@ -194,6 +225,30 @@ async function handle(request, env) {
 
     if (path.startsWith("/api/admin/")) {
       if (!authorized(request, env)) return fail("Unauthorized", 401);
+
+      if (method === "GET" && path === "/api/admin/advertiser-leads") {
+        const rows = await sql`
+          SELECT id, company_name, contact_name, contact_email, website_url,
+                 interest_type, message, status, source_page, created_at
+          FROM advertiser_leads ORDER BY created_at DESC LIMIT 200
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      const leadStatusMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/advertiser-leads\\/([0-9a-f-]{36})\\/status$/i) : null;
+      if (leadStatusMatch) {
+        const body = await request.json();
+        if (!["new", "contacted", "qualified", "declined", "converted"].includes(body.status)) {
+          return fail("Invalid lead status");
+        }
+        const rows = await sql`
+          UPDATE advertiser_leads SET status = ${body.status}, updated_at = now()
+          WHERE id = ${leadStatusMatch[1]}
+          RETURNING id, company_name, status
+        `;
+        if (!rows.length) return fail("Lead not found", 404);
+        return json({ data: rows[0] });
+      }
 
       if (method === "GET" && path === "/api/admin/metrics") {
         const rows = await sql`
