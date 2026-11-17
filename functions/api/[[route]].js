@@ -189,7 +189,7 @@ async function handle(request, env) {
       const email = String(body.contact_email || "").trim();
       const allowed = ["sponsored_placement", "affiliate_partnership", "featured_offer", "campaign_reporting", "other"];
       if (!String(body.company_name || "").trim() || !String(body.contact_name || "").trim() ||
-          !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) ||
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
           !allowed.includes(body.interest_type) || String(body.message || "").trim().length < 10) {
         return fail("Please provide company, contact, valid email, inquiry type and a message of at least 10 characters");
       }
