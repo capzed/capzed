@@ -49,12 +49,12 @@ function feedTag(xml, tag) {
 }
 
 async function refreshRssNews(sql) {
-  const due = await sql\`
+  const due = await sql`
     SELECT id, name, domain, feed_url FROM news_sources
     WHERE is_enabled = true AND source_type = 'rss' AND feed_url IS NOT NULL
       AND (last_fetched_at IS NULL OR last_fetched_at < now() - interval '20 minutes')
     ORDER BY name LIMIT 4
-  \`;
+  `;
   await Promise.all(due.map(async (source) => {
     try {
       const response = await fetch(source.feed_url, {
@@ -75,19 +75,19 @@ async function refreshRssNews(sql) {
         let article;
         try { article = new URL(articleUrl); } catch { continue; }
         if (article.protocol !== "https:" || !(article.hostname === source.domain || article.hostname.endsWith("." + source.domain))) continue;
-        await sql\`
+        await sql`
           INSERT INTO news (source_id, canonical_url, headline, summary, published_at, status)
           VALUES (\${source.id}, \${article.href}, \${headline}, \${summary || null}, \${new Date(parsedDate).toISOString()}, 'published')
           ON CONFLICT (canonical_url) DO UPDATE SET
             source_id = EXCLUDED.source_id, headline = EXCLUDED.headline,
             summary = EXCLUDED.summary, published_at = EXCLUDED.published_at,
             status = 'published'
-        \`;
+        `;
       }
     } catch (error) {
       // A failed publisher feed must not break the public news page.
     } finally {
-      await sql\`UPDATE news_sources SET last_fetched_at = now() WHERE id = \${source.id}\`;
+      await sql`UPDATE news_sources SET last_fetched_at = now() WHERE id = \${source.id}`;
     }
   }));
 }
