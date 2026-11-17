@@ -98,8 +98,10 @@ async function handle(request, env) {
 
       if (method === "GET" && path === "/api/admin/promotions/pending") {
         const rows = await sql`
-          SELECT id, title, slug, source_url, created_at
-          FROM promotions WHERE status = 'pending'
+          SELECT p.id, p.title, p.slug, p.source_url, p.created_at,
+                 (SELECT pc.id FROM promo_codes pc WHERE pc.promotion_id = p.id ORDER BY pc.created_at DESC LIMIT 1) AS promo_code_id,
+                 (SELECT pc.code FROM promo_codes pc WHERE pc.promotion_id = p.id ORDER BY pc.created_at DESC LIMIT 1) AS promo_code
+          FROM promotions p WHERE p.status = 'pending'
           ORDER BY created_at ASC LIMIT 100
         `;
         return json({ data: rows }, 200);
@@ -207,6 +209,21 @@ async function handle(request, env) {
           `;
         }
         return json({ data: rows[0], message: "Saved for verification; not publicly visible yet." }, 201);
+      }
+
+      const codePrefix = "/api/admin/promo-codes/";
+      const codeId = method === "PATCH" && path.startsWith(codePrefix) && path.endsWith("/status")
+        ? path.slice(codePrefix.length, -"/status".length) : "";
+      if (method === "PATCH" && /^[0-9a-f-]{36}$/i.test(codeId)) {
+        const body = await request.json();
+        if (!["valid", "invalid", "expired"].includes(body.status)) return fail("Invalid promo code status");
+        const rows = await sql`
+          UPDATE promo_codes SET status = ${body.status}, last_checked_at = now()
+          WHERE id = ${codeId}
+          RETURNING id, promotion_id, code, status
+        `;
+        if (!rows.length) return fail("Promo code not found", 404);
+        return json({ data: rows[0] });
       }
 
       const match = path.match(/^\/api\/admin\/promotions\/([0-9a-f-]+)\/status$/i);
