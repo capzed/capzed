@@ -184,6 +184,37 @@ async function handle(request, env) {
         return json({ data: rows[0] }, 200);
       }
 
+      if (method === "GET" && path === "/api/admin/partners") {
+        const rows = await sql`
+          SELECT id, company_name, contact_name, contact_email, website_url,
+                 partnership_type, status, created_at
+          FROM partners ORDER BY company_name ASC LIMIT 200
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "POST" && path === "/api/admin/partners") {
+        const body = await request.json();
+        const types = ["affiliate", "advertiser", "sponsor", "exchange", "media", "other"];
+        if (!body.company_name?.trim() || !types.includes(body.partnership_type)) {
+          return fail("Company name and a valid partnership type are required");
+        }
+        if (body.website_url && !isHttps(body.website_url)) return fail("Partner website must use HTTPS");
+        if (body.contact_email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(body.contact_email)) {
+          return fail("Contact email is invalid");
+        }
+        const rows = await sql`
+          INSERT INTO partners
+            (company_name, contact_name, contact_email, website_url, partnership_type, status)
+          VALUES
+            (${body.company_name.trim()}, ${body.contact_name || null},
+             ${body.contact_email || null}, ${body.website_url || null},
+             ${body.partnership_type}, 'prospect')
+          RETURNING id, company_name, partnership_type, status
+        `;
+        return json({ data: rows[0], message: "Partner saved as a prospect." }, 201);
+      }
+
       if (method === "GET" && path === "/api/admin/ads") {
         const rows = await sql`
           SELECT a.id, a.name, a.placement_key, a.target_url, a.sponsor_label,
@@ -203,11 +234,18 @@ async function handle(request, env) {
           return fail("Name, valid placement, HTTPS target URL and sponsor label are required");
         }
         if (body.creative_url && !isHttps(body.creative_url)) return fail("Creative URL must use HTTPS");
+        let partnerId = null;
+        if (body.partner_id) {
+          if (!/^[0-9a-f-]{36}$/i.test(body.partner_id)) return fail("Invalid partner");
+          const partnerRows = await sql`SELECT id FROM partners WHERE id = ${body.partner_id} LIMIT 1`;
+          if (!partnerRows.length) return fail("Partner not found", 404);
+          partnerId = partnerRows[0].id;
+        }
         const rows = await sql`
           INSERT INTO ad_campaigns
-            (name, placement_key, creative_url, target_url, starts_at, ends_at, status, sponsor_label)
+            (partner_id, name, placement_key, creative_url, target_url, starts_at, ends_at, status, sponsor_label)
           VALUES
-            (${body.name.trim()}, ${placement}, ${body.creative_url || null},
+            (${partnerId}, ${body.name.trim()}, ${placement}, ${body.creative_url || null},
              ${body.target_url}, ${body.starts_at || null}, ${body.ends_at || null},
              'draft', ${String(body.sponsor_label).trim()})
           RETURNING id, name, placement_key, status
