@@ -174,7 +174,7 @@ async function handle(request, env) {
                  AND (pc.valid_from IS NULL OR pc.valid_from <= now())
                  AND (pc.valid_until IS NULL OR pc.valid_until > now())
                  ORDER BY pc.created_at DESC LIMIT 1) AS promo_code,
-               pl.slug AS platform_slug, pl.name AS platform_name, pl.platform_type
+               pl.slug AS platform_slug, pl.name AS platform_name, pl.platform_type, pl.logo_url AS platform_logo_url, pl.website_url AS platform_website_url
         FROM promotions p JOIN platforms pl ON pl.id = p.platform_id
         WHERE p.status = 'verified'
           AND pl.status = 'published'
