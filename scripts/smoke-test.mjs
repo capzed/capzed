@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { Script } from "node:vm";
 
 async function checkInlineScripts() {
-  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "advertise.html", "guides.html", "methodology.html", "media-kit.html", "news.html"]) {
+  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "prop-firms.html", "advertise.html", "guides.html", "methodology.html", "media-kit.html", "news.html"]) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
     const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
@@ -48,6 +48,14 @@ const checks = [
     return "Public APIs and populated, source-linked news feed: OK";
   },
   async () => {
+    const { response, body } = await request("/api/prop-firm-programs");
+    assert(response.ok && Array.isArray(body.data), `Prop firm API did not return a data array (HTTP ${response.status}).`);
+    assert(body.data.length >= 1, "Verified prop firm programme feed is empty.");
+    assert(body.data.every(item => item.program_name && item.platform_slug && item.rules_url?.startsWith("https://")),
+      "Prop firm feed contains an incomplete programme or non-HTTPS rules URL.");
+    return "Verified prop firm programme API and official rules links: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/platforms/not-a-real-platform");
     assert(response.status === 404 && body.error === "Platform not found",
       `Unknown platform detail must return 404 (HTTP ${response.status}).`);
@@ -80,7 +88,7 @@ const checks = [
     return "Affiliate redirect rejects unavailable offers: OK";
   },
   async () => {
-    for (const path of ["/api/admin/platforms", "/api/admin/fees", "/api/admin/regions", "/api/admin/advertiser-leads"]) {
+    for (const path of ["/api/admin/platforms", "/api/admin/fees", "/api/admin/regions", "/api/admin/advertiser-leads", "/api/admin/prop-firm-programs"]) {
       const { response, body } = await request(path);
       assert(response.status === 401 && body.error === "Unauthorized",
         `${path} must reject requests without a token (HTTP ${response.status}).`);
@@ -88,7 +96,7 @@ const checks = [
     return "Admin platform, fee and region APIs reject unauthenticated requests: OK";
   },
   async () => {
-    for (const path of ["/compare.html", "/platform.html", "/advertise.html", "/guides.html", "/methodology.html", "/media-kit.html", "/news.html"]) {
+    for (const path of ["/compare.html", "/platform.html", "/prop-firms.html", "/advertise.html", "/guides.html", "/methodology.html", "/media-kit.html", "/news.html"]) {
       const { response, body } = await request(path);
       assert(response.ok && typeof body === "string" && body.toLowerCase().includes("<html"),
         `${path} did not return HTML (HTTP ${response.status}).`);
