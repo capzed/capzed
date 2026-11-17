@@ -9,7 +9,7 @@ async function checkInlineScripts() {
       new Script(scripts[i][1], { filename: file + ":inline-script-" + (i + 1) });
     }
   }
-  console.log("PASS: Homepage, admin and platform page inline JavaScript syntax");
+  console.log("PASS: Homepage, admin, platform, comparator and partner page inline JavaScript syntax");
 }
 
 await checkInlineScripts();
