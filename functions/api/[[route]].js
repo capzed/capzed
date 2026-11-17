@@ -197,6 +197,9 @@ async function handle(request, env) {
       if ([body.company_name, body.contact_name, email, body.message].some(v => String(v).length > 2000)) {
         return fail("One or more fields are too long");
       }
+      const recent = await sql`SELECT count(*)::int AS total FROM advertiser_leads
+        WHERE lower(contact_email) = lower(${email}) AND created_at >= now() - interval '1 hour'`;
+      if (recent[0].total >= 3) return fail("Too many inquiries from this email. Please try again later.", 429);
       await sql`
         INSERT INTO advertiser_leads
           (company_name, contact_name, contact_email, website_url, interest_type, message, source_page)
