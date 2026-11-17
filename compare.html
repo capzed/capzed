@@ -25,7 +25,7 @@ $("compare").addEventListener("click",()=>{
   ["Type",p=>safe(p.platform_type)],
   ["Maker fee",p=>fee(p.trading_fee_maker)],
   ["Taker fee",p=>fee(p.trading_fee_taker)],
-  ["Algeria availability",p=>({available:"Confirmed available",restricted:"Restrictions reported",unavailable:"Confirmed unavailable",unknown:"Not yet verified"}[p.algeria_status]||"Not yet verified")],
+  ["Regional availability",p=>Array.isArray(p.regional_availability)&&p.regional_availability.length?p.regional_availability.map(r=>safe(r.country_code)+": "+safe(({available:"Available",restricted:"Restricted",unavailable:"Unavailable",unknown:"Not verified"}[r.status]||"Not verified"))).join(" · "):"No country-specific records yet"],
   ["Official website",p=>'<a href="'+safe(p.website_url)+'" target="_blank" rel="noopener noreferrer">Visit official site ↗</a>'],
   ["Profile",p=>'<a href="/platform.html?slug='+encodeURIComponent(p.slug)+'">View details ↗</a>']
  ];
