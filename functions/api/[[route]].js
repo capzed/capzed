@@ -116,7 +116,7 @@ async function handle(request, env) {
 
     if (method === "GET" && path === "/api/platforms") {
       const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
-      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && visitorCountryCode !== "T1" ? visitorCountryCode : null;
+      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && !["T1", "XX"].includes(visitorCountryCode) ? visitorCountryCode : null;
       const rows = await sql`
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
                (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
@@ -139,7 +139,7 @@ async function handle(request, env) {
     if (platformDetailMatch) {
       const slug = platformDetailMatch[1];
       const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
-      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && visitorCountryCode !== "T1" ? visitorCountryCode : null;
+      const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && !["T1", "XX"].includes(visitorCountryCode) ? visitorCountryCode : null;
       const rows = await sql`
         SELECT p.id, p.slug, p.name, p.platform_type, p.website_url, p.logo_url,
                p.description,
