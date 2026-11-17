@@ -43,6 +43,12 @@ const checks = [
     return "Public platforms, promotions and news APIs: OK";
   },
   async () => {
+    const { response, body } = await request("/api/platforms/not-a-real-platform");
+    assert(response.status === 404 && body.error === "Platform not found",
+      `Unknown platform detail must return 404 (HTTP ${response.status}).`);
+    return "Platform detail endpoint rejects unknown slugs: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/ads?placement=top");
     assert(response.ok && Array.isArray(body.data), `Sponsored ads API failed (HTTP ${response.status}).`);
     return "Sponsored ad feed: OK";
@@ -64,6 +70,14 @@ const checks = [
     assert(response.status === 401 && body.error === "Unauthorized",
       `Admin API must reject requests without a token (HTTP ${response.status}).`);
     return "Admin API rejects unauthenticated requests: OK";
+  },
+  async () => {
+    for (const path of ["/compare.html", "/platform.html"]) {
+      const { response, body } = await request(path);
+      assert(response.ok && typeof body === "string" && body.toLowerCase().includes("<html"),
+        `${path} did not return HTML (HTTP ${response.status}).`);
+    }
+    return "Comparator and platform profile pages: OK";
   },
   async () => {
     const { response, body } = await request("/");
