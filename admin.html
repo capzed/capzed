@@ -33,6 +33,25 @@
 <button type="submit">Create draft platform</button></form>
 <div id="platformResult" class="status"></div><div id="platformList" class="status">No platforms loaded.</div>
 <hr style="border:0;border-top:1px solid #263752;margin:22px 0">
+<h2>Prop firm programme database</h2>
+<p class="note">Create programme records as drafts. Publish a firm and verify every rule against the official rules page before publishing its programmes.</p>
+<form id="propFirmProgramForm">
+<label>Prop firm</label><select name="platform_id" id="propFirmPlatform" required><option value="">Load platforms first</option></select>
+<div class="row"><div><label>Programme name</label><input name="program_name" required placeholder="Example: 2-Step Evaluation"></div><div><label>Funding model</label><select name="funding_model"><option value="1-step">1-Step</option><option value="2-step">2-Step</option><option value="3-step">3-Step</option><option value="instant">Instant funding</option><option value="other">Other</option></select></div></div>
+<label>Account sizes (USD, comma-separated)</label><input name="account_sizes_text" placeholder="10000, 25000, 50000, 100000">
+<div class="row"><div><label>Challenge fee range / currency</label><input name="challenge_fee_text" placeholder="Example: USD 99–499; refunds: conditional"></div><div><label>Maximum leverage (optional)</label><input name="max_leverage" type="number" min="0" max="1000" step="0.01"></div></div>
+<div class="row"><div><label>Phase 1 target (%)</label><input name="phase1_profit_target_pct" type="number" min="0" max="100" step="0.001"></div><div><label>Phase 2 target (%)</label><input name="phase2_profit_target_pct" type="number" min="0" max="100" step="0.001"></div></div>
+<div class="row"><div><label>Daily drawdown (%)</label><input name="daily_drawdown_pct" type="number" min="0" max="100" step="0.001"></div><div><label>Maximum drawdown (%)</label><input name="max_drawdown_pct" type="number" min="0" max="100" step="0.001"></div></div>
+<div class="row"><div><label>Drawdown calculation</label><select name="drawdown_type"><option value="">Not confirmed</option><option value="static">Static</option><option value="trailing">Trailing</option><option value="end_of_day">End of day</option><option value="intraday">Intraday</option><option value="unknown">Unknown</option></select></div><div><label>Profit split (%) minimum–maximum</label><div class="row"><input name="profit_split_min_pct" type="number" min="0" max="100" step="0.001" placeholder="80"><input name="profit_split_max_pct" type="number" min="0" max="100" step="0.001" placeholder="90"></div></div></div>
+<div class="row"><div><label>Payout frequency</label><input name="payout_frequency" placeholder="Example: bi-weekly, on demand"></div><div><label>Minimum trading days</label><input name="min_trading_days" type="number" min="0" max="365"></div></div>
+<div class="row"><div><label>News trading policy</label><input name="news_trading_policy" placeholder="Allowed / restricted / prohibited; exact window"></div><div><label>Weekend holding</label><select name="weekend_holding"><option value="">Not confirmed</option><option value="true">Allowed</option><option value="false">Not allowed</option></select></div></div>
+<label>Consistency rule / other restrictions</label><textarea name="consistency_rule"></textarea>
+<label>Official programme rules URL (HTTPS)</label><input name="rules_url" type="url" required>
+<label>Verification source URL (HTTPS)</label><input name="source_url" type="url" required>
+<label>Editorial notes</label><textarea name="notes"></textarea>
+<button type="submit">Save programme as draft</button></form>
+<div id="propFirmProgramResult" class="status"></div><div id="propFirmProgramList" class="status">No programmes loaded.</div>
+<hr style="border:0;border-top:1px solid #263752;margin:22px 0">
 <h2>Global regional availability evidence</h2>
 <p class="note">Track availability by country for every platform. Use ISO 3166-1 alpha-2 country codes (for example US, GB, DE, SG). Only confirm a status when an official source supports it.</p>
 <form id="regionForm">
@@ -138,7 +157,7 @@ $("connect").addEventListener("click", async () => {
     await api("/api/admin/platforms");
     $("connection").textContent = "Admin token accepted; database connected.";
     $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden"); $("ads").classList.remove("hidden");
-    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadFees(); await loadQueue(); await loadPartners(); await loadAds(); await loadLeads();
+    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadFees(); await loadPropFirmPrograms(); await loadQueue(); await loadPartners(); await loadAds(); await loadLeads();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -349,6 +368,24 @@ $("newsForm").addEventListener("submit", async (event) => {
   } catch(e) { $("newsResult").textContent=e.message; }
 });
 
+$("propFirmProgramForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const raw=Object.fromEntries(new FormData(event.currentTarget).entries());
+  const accountSizes=raw.account_sizes_text.split(",").map(v=>Number(v.trim())).filter(v=>Number.isFinite(v)&&v>0);
+  const feeText=raw.challenge_fee_text.trim();
+  const body={...raw,account_sizes:accountSizes,challenge_fee:feeText?{display:feeText}:{},weekend_holding:raw.weekend_holding===""?null:raw.weekend_holding==="true"};
+  delete body.account_sizes_text;delete body.challenge_fee_text;
+  for(const key of ["phase1_profit_target_pct","phase2_profit_target_pct","daily_drawdown_pct","max_drawdown_pct","profit_split_min_pct","profit_split_max_pct","max_leverage","min_trading_days"]) body[key]=body[key]===""?null:Number(body[key]);
+  try{const result=await api("/api/admin/prop-firm-programs",{method:"POST",body:JSON.stringify(body)});$("propFirmProgramResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();await loadPropFirmPrograms();}
+  catch(e){$("propFirmProgramResult").textContent=e.message;}
+});
+async function loadPropFirmPrograms(){
+ const host=$("propFirmProgramList");host.textContent="Loading…";
+ try{const result=await api("/api/admin/prop-firm-programs");host.textContent="";
+  if(!result.data.length){host.textContent="No prop firm programmes yet.";return;}
+  for(const p of result.data){const row=document.createElement("div");row.style.cssText="padding:9px 0;border-bottom:1px solid #263752";const title=document.createElement("strong");title.textContent=p.firm_name+" · "+p.program_name;const meta=document.createElement("p");meta.className="note";meta.textContent=p.funding_model+" · "+p.status+" · "+(p.verified_at?"verified "+new Date(p.verified_at).toLocaleDateString():"not verified");row.append(title,meta);host.append(row);}
+ }catch(e){host.textContent=e.message;}
+}
 $("platform").addEventListener("submit", async (event) => {
   event.preventDefault(); const body=Object.fromEntries(new FormData(event.currentTarget).entries());
   try { const result=await api("/api/admin/platforms",{method:"POST",body:JSON.stringify(body)});
@@ -361,9 +398,11 @@ async function loadPlatforms(){
     const result=await api("/api/admin/platforms");
     const select=$("platformSelect");select.textContent="";
     const feeSelect=$("feePlatform");feeSelect.textContent="";
+    const propFirmSelect=$("propFirmPlatform");propFirmSelect.textContent="";
+    const propFirmFirst=document.createElement("option");propFirmFirst.value="";propFirmFirst.textContent="Choose a prop firm";propFirmSelect.append(propFirmFirst);
     const first=document.createElement("option");first.value="";first.textContent="Choose a platform";select.append(first);
     const feeFirst=document.createElement("option");feeFirst.value="";feeFirst.textContent="Choose a platform";feeSelect.append(feeFirst);
-    for(const p of result.data){const option=document.createElement("option");option.value=p.id;option.textContent=p.name+" ("+p.platform_type+")";select.append(option);const feeOption=document.createElement("option");feeOption.value=p.id;feeOption.textContent=p.name+" ("+p.platform_type+")";feeSelect.append(feeOption);}
+    for(const p of result.data){const option=document.createElement("option");option.value=p.id;option.textContent=p.name+" ("+p.platform_type+")";select.append(option);const feeOption=document.createElement("option");feeOption.value=p.id;feeOption.textContent=p.name+" ("+p.platform_type+")";feeSelect.append(feeOption);if(p.platform_type==="PROP_FIRM"){const firmOption=document.createElement("option");firmOption.value=p.id;firmOption.textContent=p.name;propFirmSelect.append(firmOption);}}
     host.textContent="";
     if(!result.data.length){host.textContent="No platforms yet.";return;}
     for(const p of result.data){
