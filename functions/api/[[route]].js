@@ -108,13 +108,16 @@ async function handle(request, env) {
         return json({ data: rows }, 200);
       }
 
-      const platformMatch = path.match(/^\\/api\\/admin\\/platforms\\/([0-9a-f-]+)\\/status$/i);
+      const platformPrefix = "/api/admin/platforms/";
+      const platformId = method === "PATCH" && path.startsWith(platformPrefix) && path.endsWith("/status")
+        ? path.slice(platformPrefix.length, -"/status".length) : "";
+      const platformMatch = /^[0-9a-f-]{36}$/i.test(platformId) ? platformId : null;
       if (method === "PATCH" && platformMatch) {
         const body = await request.json();
         if (!["published", "suspended", "draft"].includes(body.status)) return fail("Invalid status");
         const rows = await sql`
           UPDATE platforms SET status = ${body.status}, updated_at = now()
-          WHERE id = ${platformMatch[1]}
+          WHERE id = ${platformMatch}
           RETURNING id, slug, name, platform_type, status
         `;
         if (!rows.length) return fail("Platform not found", 404);
