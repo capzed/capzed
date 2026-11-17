@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title">
+<title id="title">AUTOMATET mark</title>
+<path d="M5.5 24.5 12.2 17l5.1 4.2L26.5 9" stroke="#07111c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.5 9h7v7" stroke="#07111c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="5.5" cy="24.5" r="2" fill="#07111c"/>
+</svg>
