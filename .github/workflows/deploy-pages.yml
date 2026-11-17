@@ -22,7 +22,7 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
-      - name: Validate API syntax
+      - name: Validate API and smoke-test syntax
         run: npm run check
       - name: Install Wrangler
         run: npm install --global wrangler
@@ -34,8 +34,12 @@ jobs:
           if ! wrangler pages project list | grep -q "automatet-crypto-deals"; then
             wrangler pages project create automatet-crypto-deals --production-branch main
           fi
-      - name: Deploy isolated preview project
+      - name: Deploy production branch to isolated Pages project
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: wrangler pages deploy . --project-name automatet-crypto-deals --branch main --commit-dirty=true
+      - name: Verify production website, public APIs and admin protection
+        env:
+          SMOKE_BASE_URL: https://automatet-crypto-deals.pages.dev
+        run: npm run smoke
