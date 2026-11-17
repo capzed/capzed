@@ -65,8 +65,13 @@ async function handle(request, env) {
                p.reward_currency, p.reward_description, p.terms_url, p.landing_url,
                p.starts_at, p.ends_at, p.eligibility, p.region_restrictions,
                p.is_featured, p.is_sponsored, p.sponsorship_label, p.affiliate_url,
-               p.affiliate_disclosure, pl.slug AS platform_slug, pl.name AS platform_name,
-               pl.platform_type
+               p.affiliate_disclosure,
+               (SELECT pc.code FROM promo_codes pc WHERE pc.promotion_id = p.id
+                 AND pc.status = 'valid'
+                 AND (pc.valid_from IS NULL OR pc.valid_from <= now())
+                 AND (pc.valid_until IS NULL OR pc.valid_until > now())
+                 ORDER BY pc.created_at DESC LIMIT 1) AS promo_code,
+               pl.slug AS platform_slug, pl.name AS platform_name, pl.platform_type
         FROM promotions p JOIN platforms pl ON pl.id = p.platform_id
         WHERE p.status = 'verified'
           AND pl.status = 'published'
@@ -194,6 +199,13 @@ async function handle(request, env) {
              ${body.affiliate_disclosure || null})
           RETURNING id, slug, title, status
         `;
+        if (body.promo_code && String(body.promo_code).trim()) {
+          await sql`
+            INSERT INTO promo_codes (promotion_id, code, valid_from, valid_until, status, verification_source_url)
+            VALUES (${rows[0].id}, ${String(body.promo_code).trim()}, ${body.starts_at || null},
+                    ${body.ends_at || null}, 'unverified', ${body.source_url})
+          `;
+        }
         return json({ data: rows[0], message: "Saved for verification; not publicly visible yet." }, 201);
       }
 
