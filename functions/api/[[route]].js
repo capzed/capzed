@@ -123,6 +123,23 @@ async function handle(request, env) {
     if (path.startsWith("/api/admin/")) {
       if (!authorized(request, env)) return fail("Unauthorized", 401);
 
+      if (method === "GET" && path === "/api/admin/metrics") {
+        const rows = await sql`
+          SELECT
+            (SELECT count(*)::int FROM platforms) AS platforms_total,
+            (SELECT count(*)::int FROM platforms WHERE status = 'published') AS platforms_published,
+            (SELECT count(*)::int FROM promotions) AS promotions_total,
+            (SELECT count(*)::int FROM promotions WHERE status = 'pending') AS promotions_pending,
+            (SELECT count(*)::int FROM promotions WHERE status = 'verified'
+              AND (starts_at IS NULL OR starts_at <= now())
+              AND (ends_at IS NULL OR ends_at > now())) AS promotions_active,
+            (SELECT count(*)::int FROM news WHERE status = 'published') AS news_published,
+            (SELECT count(*)::int FROM affiliate_clicks
+              WHERE clicked_at >= now() - interval '30 days') AS affiliate_clicks_30d
+        `;
+        return json({ data: rows[0] }, 200);
+      }
+
       if (method === "GET" && path === "/api/admin/promotions/pending") {
         const rows = await sql`
           SELECT p.id, p.title, p.slug, p.source_url, p.created_at,
