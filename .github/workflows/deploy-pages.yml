@@ -1,0 +1,41 @@
+name: Deploy AUTOMATET Crypto Deals
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automatet-crypto-deals-pages-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Validate API syntax
+        run: npm run check
+      - name: Install Wrangler
+        run: npm install --global wrangler
+      - name: Create Pages project if needed
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if ! wrangler pages project list --account-id "$CLOUDFLARE_ACCOUNT_ID" | grep -q "automatet-crypto-deals"; then
+            wrangler pages project create automatet-crypto-deals --production-branch main --account-id "$CLOUDFLARE_ACCOUNT_ID"
+          fi
+      - name: Deploy isolated preview project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler pages deploy . --project-name automatet-crypto-deals --branch main --commit-dirty=true
