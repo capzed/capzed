@@ -82,6 +82,33 @@ async function handle(request, env) {
       return json({ data: rows });
     }
 
+    const clickMatch = method === "GET" ? path.match(/^\\/api\\/go\\/([a-z0-9-]+)$/i) : null;
+    if (clickMatch) {
+      const slug = clickMatch[1];
+      const rows = await sql`
+        SELECT p.id AS promotion_id, p.platform_id, COALESCE(p.affiliate_url, p.landing_url) AS target_url
+        FROM promotions p
+        JOIN platforms pl ON pl.id = p.platform_id
+        WHERE p.slug = ${slug}
+          AND p.status = 'verified' AND pl.status = 'published'
+          AND (p.starts_at IS NULL OR p.starts_at <= now())
+          AND (p.ends_at IS NULL OR p.ends_at > now())
+        LIMIT 1
+      `;
+      if (!rows.length || !isHttps(rows[0].target_url)) return fail("Offer is no longer available", 404);
+      const sourcePage = (url.searchParams.get("from") || "/").slice(0, 160);
+      await sql`
+        INSERT INTO affiliate_clicks (promotion_id, platform_id, source_page, campaign_tag)
+        VALUES (${rows[0].promotion_id}, ${rows[0].platform_id}, ${sourcePage}, 'website')
+      `;
+      return new Response(null, { status: 302, headers: {
+        "location": rows[0].target_url,
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+        "x-content-type-options": "nosniff"
+      }});
+    }
+
     if (method === "GET" && path === "/api/news") {
       const rows = await sql`
         SELECT n.id, n.headline, n.summary, n.canonical_url, n.image_url,
