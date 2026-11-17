@@ -1,6 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title">
-<title id="title">AUTOMATET mark</title>
-<path d="M5.5 24.5 12.2 17l5.1 4.2L26.5 9" stroke="#07111c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M19.5 9h7v7" stroke="#07111c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="5.5" cy="24.5" r="2" fill="#07111c"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title">
+<title id="title">AUTOMATET rising market mark</title>
+<defs>
+ <linearGradient id="sweep" x1="7" y1="49" x2="52" y2="12" gradientUnits="userSpaceOnUse"><stop stop-color="#31D9FF"/><stop offset=".55" stop-color="#168BFF"/><stop offset="1" stop-color="#8B7CFF"/></linearGradient>
+ <linearGradient id="gold" x1="10" y1="54" x2="34" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#FFB629"/><stop offset="1" stop-color="#FFE27A"/></linearGradient>
+</defs>
+<path d="M9 53V43h7v10H9Z" fill="url(#gold)"/>
+<path d="M21 53V34h7v19h-7Z" fill="url(#gold)"/>
+<path d="M33 53V25h7v28h-7Z" fill="url(#gold)"/>
+<path d="M5 42.5C17 44 27 35.5 38 25.5L48 16" stroke="url(#sweep)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="m37.5 13.5 15-2-2 15" stroke="#E8FBFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6 57h47" stroke="#EAF6FF" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+<circle cx="5" cy="42.5" r="3" fill="#F4FBFF"/>
 </svg>
