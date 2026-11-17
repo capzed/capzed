@@ -200,7 +200,7 @@ async function handle(request, env) {
           return fail("Company name and a valid partnership type are required");
         }
         if (body.website_url && !isHttps(body.website_url)) return fail("Partner website must use HTTPS");
-        if (body.contact_email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(body.contact_email)) {
+        if (body.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contact_email)) {
           return fail("Contact email is invalid");
         }
         const rows = await sql`
