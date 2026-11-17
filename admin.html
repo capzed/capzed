@@ -48,6 +48,8 @@
 <label>Verification source URL (HTTPS)</label><input name="source_url" type="url" required>
 <label>Affiliate URL (optional, HTTPS)</label><input name="affiliate_url" type="url">
 <label>Affiliate disclosure (if applicable)</label><input name="affiliate_disclosure">
+<label><input name="is_sponsored" type="checkbox" style="width:auto"> This is a paid/sponsored placement</label>
+<label>Visible sponsorship label (required for sponsored)</label><input name="sponsorship_label" placeholder="Sponsored">
 <button type="submit">Save as pending</button>
 </form><div id="result" class="status"></div>
 </section>
@@ -89,6 +91,7 @@ $("connect").addEventListener("click", async () => {
 $("promotion").addEventListener("submit", async (event) => {
   event.preventDefault(); const form = new FormData(event.currentTarget); const body = Object.fromEntries(form.entries());
   for (const key of ["reward_amount"]) body[key] = body[key] === "" ? null : Number(body[key]);
+  body.is_sponsored = body.is_sponsored === "on";
   for (const key of ["starts_at","ends_at"]) body[key] = body[key] || null;
   try {
     const result = await api("/api/admin/promotions",{method:"POST",body:JSON.stringify(body)});
