@@ -184,12 +184,15 @@ async function handle(request, env) {
         if (![body.terms_url, body.landing_url, body.source_url].every(isHttps)) {
           return fail("All promotion URLs must use HTTPS");
         }
+        if (body.is_sponsored && !String(body.sponsorship_label || "").trim()) {
+          return fail("Sponsored promotions require a visible sponsorship label");
+        }
         const rows = await sql`
           INSERT INTO promotions
             (platform_id, slug, title, summary, details, offer_type, reward_amount,
              reward_currency, reward_description, terms_url, landing_url, source_url,
              starts_at, ends_at, eligibility, region_restrictions, status,
-             affiliate_url, affiliate_disclosure)
+             is_sponsored, sponsorship_label, affiliate_url, affiliate_disclosure)
           VALUES
             (${body.platform_id}, ${body.slug.trim()}, ${body.title.trim()},
              ${body.summary.trim()}, ${body.details || null}, ${body.offer_type},
@@ -197,6 +200,7 @@ async function handle(request, env) {
              ${body.reward_description || null}, ${body.terms_url}, ${body.landing_url},
              ${body.source_url}, ${body.starts_at || null}, ${body.ends_at || null},
              ${body.eligibility || null}, ${body.region_restrictions || null}, 'pending',
+             ${Boolean(body.is_sponsored)}, ${body.is_sponsored ? String(body.sponsorship_label).trim() : null},
              ${body.affiliate_url && isHttps(body.affiliate_url) ? body.affiliate_url : null},
              ${body.affiliate_disclosure || null})
           RETURNING id, slug, title, status
