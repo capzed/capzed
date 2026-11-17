@@ -63,18 +63,18 @@ async function refreshRssNews(sql) {
       });
       if (!response.ok) throw new Error("RSS response " + response.status);
       const xml = await response.text();
-      const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0, 12);
-      for (const match of items) {
+      const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0, 5);
+      await Promise.all(items.map(async (match) => {
         const item = match[1];
         const headline = feedTag(item, "title").slice(0, 300);
         const articleUrl = feedTag(item, "link");
         const summary = feedTag(item, "description").slice(0, 360);
         const rawDate = feedTag(item, "pubDate") || feedTag(item, "dc:date");
         const parsedDate = rawDate ? Date.parse(rawDate) : Date.now();
-        if (!headline || !articleUrl || !Number.isFinite(parsedDate) || Date.now() - parsedDate > 14 * 86400000) continue;
+        if (!headline || !articleUrl || !Number.isFinite(parsedDate) || Date.now() - parsedDate > 14 * 86400000) return;
         let article;
-        try { article = new URL(articleUrl); } catch { continue; }
-        if (article.protocol !== "https:" || !(article.hostname === source.domain || article.hostname.endsWith("." + source.domain))) continue;
+        try { article = new URL(articleUrl); } catch { return; }
+        if (article.protocol !== "https:" || !(article.hostname === source.domain || article.hostname.endsWith("." + source.domain))) return;
         await sql`
           INSERT INTO news (source_id, canonical_url, headline, summary, published_at, status)
           VALUES (${source.id}, ${article.href}, ${headline}, ${summary || null}, ${new Date(parsedDate).toISOString()}, 'published')
@@ -83,7 +83,7 @@ async function refreshRssNews(sql) {
             summary = EXCLUDED.summary, published_at = EXCLUDED.published_at,
             status = 'published'
         `;
-      }
+      }));
     } catch (error) {
       // A failed publisher feed must not break the public news page.
     } finally {
