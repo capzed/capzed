@@ -69,6 +69,19 @@
 <div class="row"><div><label>Image URL (optional, HTTPS)</label><input name="image_url" type="url"></div><div><label>Publication time (ISO, optional)</label><input name="published_at" placeholder="2026-11-17T08:00:00Z"></div></div>
 <button type="submit">Publish sourced headline</button></form><div id="newsResult" class="status"></div>
 </section>
+<section class="panel hidden" id="ads">
+<h2>Sponsored campaigns</h2>
+<p class="note">Create campaigns as drafts. Check the advertiser, creative and destination before activating. Every public placement carries a sponsor label.</p>
+<form id="adForm">
+<label>Campaign / advertiser name</label><input name="name" required>
+<div class="row"><div><label>Placement key</label><select name="placement_key"><option value="top">Top banner</option><option value="inline">Inline banner</option></select></div><div><label>Visible sponsor label</label><input name="sponsor_label" value="Sponsored" required></div></div>
+<label>Destination URL (HTTPS)</label><input name="target_url" type="url" required>
+<label>Creative image URL (optional, HTTPS)</label><input name="creative_url" type="url">
+<div class="row"><div><label>Start date (optional)</label><input name="starts_at" placeholder="2026-11-20T00:00:00Z"></div><div><label>End date (optional)</label><input name="ends_at" placeholder="2026-12-20T23:59:59Z"></div></div>
+<button type="submit">Save campaign as draft</button></form>
+<div id="adResult" class="status"></div>
+<h3>Campaign inventory</h3><button id="refreshAds" type="button">Refresh campaigns</button><div id="adList" class="status">No campaigns loaded.</div>
+</section>
 <section class="panel hidden" id="queue">
 <h2>Pending review</h2><button id="refresh">Refresh queue</button><div id="items" class="status">No data loaded.</div>
 </section>
@@ -89,8 +102,8 @@ $("connect").addEventListener("click", async () => {
   try {
     await api("/api/admin/platforms");
     $("connection").textContent = "Admin token accepted; database connected.";
-    $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden");
-    await loadMetrics(); await loadPlatforms(); await loadQueue();
+    $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden"); $("ads").classList.remove("hidden");
+    await loadMetrics(); await loadPlatforms(); await loadQueue(); await loadAds();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -114,7 +127,7 @@ async function loadMetrics(){
       [data.promotions_pending,"Pending offers"],
       [data.promotions_active,"Active verified offers"],
       [data.news_published,"Published news"],
-      [data.affiliate_clicks_30d,"Affiliate clicks · 30 days"]
+      [data.affiliate_clicks_30d,"Affiliate clicks · 30 days"],\n      [data.ads_active,"Active ad campaigns"],\n      [data.ad_clicks_total,"Sponsored ad clicks"]
     ];
     host.textContent="";
     for(const [value,label] of metrics){
@@ -163,6 +176,42 @@ async function changeStatus(id,status){
   try { await api("/api/admin/promotions/"+id+"/status",{method:"PATCH",body:JSON.stringify({status})}); await loadQueue(); }
   catch(e) { $("items").textContent=e.message; }
 }
+async function loadAds(){
+ const host=$("adList");host.textContent="Loading…";
+ try{
+  const result=await api("/api/admin/ads");host.textContent="";
+  if(!result.data.length){host.textContent="No campaigns yet.";return;}
+  for(const item of result.data){
+   const row=document.createElement("div");row.style.cssText="padding:12px 0;border-bottom:1px solid #263752";
+   const title=document.createElement("strong");title.textContent=item.name+" · "+item.placement_key;
+   const meta=document.createElement("p");meta.className="note";meta.textContent=item.status+" · "+Number(item.impressions_count||0).toLocaleString()+" impressions · "+Number(item.clicks_count||0).toLocaleString()+" clicks";
+   const link=document.createElement("a");link.href=item.target_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Destination ↗";link.style.color="#50e5d0";
+   row.append(title,meta,link);
+   if(item.status!=="active"){
+    const activate=document.createElement("button");activate.textContent="Activate";activate.style.marginLeft="10px";
+    activate.addEventListener("click",()=>changeAdStatus(item.id,"active"));
+    row.append(activate);
+   }else{
+    const pause=document.createElement("button");pause.textContent="Pause";pause.style.marginLeft="10px";pause.style.background="#f28b8b";
+    pause.addEventListener("click",()=>changeAdStatus(item.id,"paused"));row.append(pause);
+   }
+   host.append(row);
+  }
+ }catch(e){host.textContent=e.message;}
+}
+async function changeAdStatus(id,status){
+ if(!confirm(status==="active"?"Confirm the advertiser, creative and destination are approved?":"Pause this campaign?"))return;
+ try{await api("/api/admin/ads/"+id+"/status",{method:"PATCH",body:JSON.stringify({status})});await loadAds();await loadMetrics();}
+ catch(e){$("adList").textContent=e.message;}
+}
+$("adForm").addEventListener("submit",async(event)=>{
+ event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
+ for(const key of ["starts_at","ends_at","creative_url"])body[key]=body[key]||null;
+ try{const result=await api("/api/admin/ads",{method:"POST",body:JSON.stringify(body)});
+ $("adResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();await loadAds();}
+ catch(e){$("adResult").textContent=e.message;}
+});
+$("refreshAds").addEventListener("click",loadAds);
 $("refresh").addEventListener("click",loadQueue);
 $("newsForm").addEventListener("submit", async (event) => {
   event.preventDefault(); const body=Object.fromEntries(new FormData(event.currentTarget).entries());
