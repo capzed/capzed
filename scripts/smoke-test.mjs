@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { Script } from "node:vm";
 
 async function checkInlineScripts() {
-  for (const file of ["index.html", "admin.html", "platform.html", "compare.html"]) {
+  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "advertise.html"]) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
     const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
@@ -49,6 +49,15 @@ const checks = [
     return "Platform detail endpoint rejects unknown slugs: OK";
   },
   async () => {
+    const { response, body } = await request("/api/advertiser-leads", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({})
+    });
+    assert(response.status === 400 && typeof body.error === "string",
+      `Advertiser inquiry validation failed (HTTP ${response.status}).`);
+    return "Advertiser inquiry endpoint validates required fields: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/ads?placement=top");
     assert(response.ok && Array.isArray(body.data), `Sponsored ads API failed (HTTP ${response.status}).`);
     return "Sponsored ad feed: OK";
@@ -66,7 +75,7 @@ const checks = [
     return "Affiliate redirect rejects unavailable offers: OK";
   },
   async () => {
-    for (const path of ["/api/admin/platforms", "/api/admin/fees", "/api/admin/regions"]) {
+    for (const path of ["/api/admin/platforms", "/api/admin/fees", "/api/admin/regions", "/api/admin/advertiser-leads"]) {
       const { response, body } = await request(path);
       assert(response.status === 401 && body.error === "Unauthorized",
         `${path} must reject requests without a token (HTTP ${response.status}).`);
@@ -74,7 +83,7 @@ const checks = [
     return "Admin platform, fee and region APIs reject unauthenticated requests: OK";
   },
   async () => {
-    for (const path of ["/compare.html", "/platform.html"]) {
+    for (const path of ["/compare.html", "/platform.html", "/advertise.html"]) {
       const { response, body } = await request(path);
       assert(response.ok && typeof body === "string" && body.toLowerCase().includes("<html"),
         `${path} did not return HTML (HTTP ${response.status}).`);
