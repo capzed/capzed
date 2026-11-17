@@ -92,6 +92,10 @@
 <button type="submit">Publish sourced headline</button></form><div id="newsResult" class="status"></div>
 </section>
 <section class="panel hidden" id="ads">
+<h2>Advertiser inquiries</h2>
+<p class="note">Inbound partnership requests submitted from the public Advertise page.</p>
+<button id="refreshLeads" type="button">Refresh inquiries</button><div id="leadList" class="status">No inquiries loaded.</div>
+<hr style="border:0;border-top:1px solid #263752;margin:22px 0">
 <h2>Sponsored campaigns</h2>
 <p class="note">Create campaigns as drafts. Check the advertiser, creative and destination before activating. Every public placement carries a sponsor label.</p>
 <h3>Partner pipeline</h3>
@@ -133,7 +137,7 @@ $("connect").addEventListener("click", async () => {
     await api("/api/admin/platforms");
     $("connection").textContent = "Admin token accepted; database connected.";
     $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden"); $("ads").classList.remove("hidden");
-    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadFees(); await loadQueue(); await loadPartners(); await loadAds();
+    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadFees(); await loadQueue(); await loadPartners(); await loadAds(); await loadLeads();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -276,6 +280,26 @@ $("partnerForm").addEventListener("submit",async(event)=>{
  $("partnerResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();await loadPartners();}
  catch(e){$("partnerResult").textContent=e.message;}
 });
+async function loadLeads(){
+ const host=$("leadList");host.textContent="Loading…";
+ try{
+  const result=await api("/api/admin/advertiser-leads");host.textContent="";
+  if(!result.data.length){host.textContent="No advertiser inquiries yet.";return;}
+  for(const item of result.data){
+   const row=document.createElement("div");row.style.cssText="padding:12px 0;border-bottom:1px solid #263752";
+   const title=document.createElement("strong");title.textContent=item.company_name+" · "+item.interest_type;
+   const meta=document.createElement("p");meta.className="note";meta.textContent=item.contact_name+" · "+item.contact_email+" · "+item.status+" · "+new Date(item.created_at).toLocaleString();
+   const message=document.createElement("p");message.textContent=item.message;message.style.whiteSpace="pre-wrap";
+   row.append(title,meta,message);
+   if(item.website_url){const site=document.createElement("a");site.href=item.website_url;site.target="_blank";site.rel="noopener noreferrer";site.textContent="Company website ↗";site.style.color="#50e5d0";row.append(site);}
+   const select=document.createElement("select");select.style.maxWidth="220px";select.style.marginRight="8px";
+   for(const status of ["new","contacted","qualified","declined","converted"]){const option=document.createElement("option");option.value=status;option.textContent=status;option.selected=status===item.status;select.append(option);}
+   const save=document.createElement("button");save.textContent="Update status";save.addEventListener("click",async()=>{try{await api("/api/admin/advertiser-leads/"+item.id+"/status",{method:"PATCH",body:JSON.stringify({status:select.value})});await loadLeads();}catch(e){host.textContent=e.message;}});
+   row.append(document.createElement("br"),select,save);host.append(row);
+  }
+ }catch(e){host.textContent=e.message;}
+}
+$("refreshLeads").addEventListener("click",loadLeads);
 async function loadAds(){
  const host=$("adList");host.textContent="Loading…";
  try{
