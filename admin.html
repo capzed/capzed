@@ -72,8 +72,15 @@
 <section class="panel hidden" id="ads">
 <h2>Sponsored campaigns</h2>
 <p class="note">Create campaigns as drafts. Check the advertiser, creative and destination before activating. Every public placement carries a sponsor label.</p>
+<h3>Partner pipeline</h3>
+<form id="partnerForm">
+<div class="row"><div><label>Company / brand</label><input name="company_name" required></div><div><label>Partnership type</label><select name="partnership_type"><option value="advertiser">Advertiser</option><option value="sponsor">Sponsor</option><option value="affiliate">Affiliate</option><option value="exchange">Exchange</option><option value="media">Media</option><option value="other">Other</option></select></div></div>
+<div class="row"><div><label>Contact name</label><input name="contact_name"></div><div><label>Contact email</label><input name="contact_email" type="email"></div></div>
+<label>Website (HTTPS)</label><input name="website_url" type="url">
+<button type="submit">Add partner prospect</button></form>
+<div id="partnerResult" class="status"></div><div id="partnerList" class="status">No partners loaded.</div>
 <form id="adForm">
-<label>Campaign / advertiser name</label><input name="name" required>
+<label>Campaign / advertiser name</label><input name="name" required>\n<label>Linked partner (optional)</label><select name="partner_id" id="adPartnerSelect"><option value="">No linked partner</option></select>
 <div class="row"><div><label>Placement key</label><select name="placement_key"><option value="top">Top banner</option><option value="inline">Inline banner</option></select></div><div><label>Visible sponsor label</label><input name="sponsor_label" value="Sponsored" required></div></div>
 <label>Destination URL (HTTPS)</label><input name="target_url" type="url" required>
 <label>Creative image URL (optional, HTTPS)</label><input name="creative_url" type="url">
@@ -103,7 +110,7 @@ $("connect").addEventListener("click", async () => {
     await api("/api/admin/platforms");
     $("connection").textContent = "Admin token accepted; database connected.";
     $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden"); $("ads").classList.remove("hidden");
-    await loadMetrics(); await loadPlatforms(); await loadQueue(); await loadAds();
+    await loadMetrics(); await loadPlatforms(); await loadQueue(); await loadPartners(); await loadAds();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -177,6 +184,29 @@ async function changeStatus(id,status){
   try { await api("/api/admin/promotions/"+id+"/status",{method:"PATCH",body:JSON.stringify({status})}); await loadQueue(); }
   catch(e) { $("items").textContent=e.message; }
 }
+async function loadPartners(){
+ const host=$("partnerList");host.textContent="Loading…";
+ try{
+  const result=await api("/api/admin/partners");host.textContent="";
+  const select=$("adPartnerSelect");select.textContent="";
+  const empty=document.createElement("option");empty.value="";empty.textContent="No linked partner";select.append(empty);
+  if(!result.data.length){host.textContent="No partners yet.";return;}
+  for(const partner of result.data){
+   const option=document.createElement("option");option.value=partner.id;option.textContent=partner.company_name+" · "+partner.partnership_type;select.append(option);
+   const row=document.createElement("div");row.style.cssText="padding:8px 0;border-bottom:1px solid #263752";
+   const name=document.createElement("strong");name.textContent=partner.company_name;
+   const meta=document.createElement("p");meta.className="note";meta.textContent=partner.partnership_type+" · "+partner.status+(partner.contact_email?" · "+partner.contact_email:"");
+   row.append(name,meta);host.append(row);
+  }
+ }catch(e){host.textContent=e.message;}
+}
+$("partnerForm").addEventListener("submit",async(event)=>{
+ event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
+ for(const key of ["contact_name","contact_email","website_url"])body[key]=body[key]||null;
+ try{const result=await api("/api/admin/partners",{method:"POST",body:JSON.stringify(body)});
+ $("partnerResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();await loadPartners();}
+ catch(e){$("partnerResult").textContent=e.message;}
+});
 async function loadAds(){
  const host=$("adList");host.textContent="Loading…";
  try{
@@ -207,7 +237,7 @@ async function changeAdStatus(id,status){
 }
 $("adForm").addEventListener("submit",async(event)=>{
  event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
- for(const key of ["starts_at","ends_at","creative_url"])body[key]=body[key]||null;
+ for(const key of ["starts_at","ends_at","creative_url","partner_id"])body[key]=body[key]||null;
  try{const result=await api("/api/admin/ads",{method:"POST",body:JSON.stringify(body)});
  $("adResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();await loadAds();}
  catch(e){$("adResult").textContent=e.message;}
