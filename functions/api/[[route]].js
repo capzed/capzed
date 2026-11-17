@@ -63,8 +63,10 @@ async function handle(request, env) {
                (SELECT fee_tier FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_tier,
                (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
                (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
-               (SELECT availability_status FROM platform_region_availability r
-                 WHERE r.platform_id = platforms.id AND r.country_code = 'DZ') AS algeria_status
+               (SELECT COALESCE(json_agg(json_build_object('country_code', r.country_code, 'status', r.availability_status,
+                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)
+                         ORDER BY r.country_code), '[]'::json)
+                  FROM platform_region_availability r WHERE r.platform_id = platforms.id) AS regional_availability
         FROM platforms WHERE status = 'published'
         ORDER BY name ASC LIMIT 100
       `;
@@ -86,10 +88,10 @@ async function handle(request, env) {
                (SELECT json_agg(json_build_object('slug', c.slug, 'name', c.name))
                   FROM platform_categories pc JOIN categories c ON c.id = pc.category_id
                  WHERE pc.platform_id = p.id) AS categories,
-               (SELECT json_build_object('status', r.availability_status, 'evidence_url', r.evidence_url,
-                         'checked_at', r.checked_at, 'notes', r.notes)
-                  FROM platform_region_availability r
-                 WHERE r.platform_id = p.id AND r.country_code = 'DZ') AS algeria,
+               (SELECT COALESCE(json_agg(json_build_object('country_code', r.country_code, 'status', r.availability_status,
+                         'evidence_url', r.evidence_url, 'checked_at', r.checked_at, 'notes', r.notes)
+                         ORDER BY r.country_code), '[]'::json)
+                  FROM platform_region_availability r WHERE r.platform_id = p.id) AS regional_availability,
                (SELECT count(*)::int FROM promotions pr
                  WHERE pr.platform_id = p.id AND pr.status = 'verified'
                    AND (pr.starts_at IS NULL OR pr.starts_at <= now())
@@ -279,40 +281,40 @@ async function handle(request, env) {
       }
 
       if (method === "GET" && path === "/api/admin/regions") {
-        const rows = await sql`
+        const rows = await sql\`
           SELECT p.id AS platform_id, p.name AS platform_name, p.slug,
-                 r.availability_status, r.evidence_url, r.checked_at, r.notes
-          FROM platforms p LEFT JOIN platform_region_availability r
-            ON r.platform_id = p.id AND r.country_code = 'DZ'
-          ORDER BY p.name ASC LIMIT 200
-        `;
+                 r.country_code, r.availability_status, r.evidence_url, r.checked_at, r.notes
+          FROM platforms p LEFT JOIN platform_region_availability r ON r.platform_id = p.id
+          ORDER BY p.name ASC, r.country_code ASC LIMIT 1000
+        \`;
         return json({ data: rows }, 200);
       }
 
-      const regionMatch = method === "PATCH" ? path.match(/^\/api\/admin\/platforms\/([0-9a-f-]{36})\/region\/DZ$/i) : null;
+      const regionMatch = method === "PATCH" ? path.match(/^\/api\/admin\/platforms\/([0-9a-f-]{36})\/region\/([A-Z]{2})$/i) : null;
       if (regionMatch) {
         const body = await request.json();
+        const countryCode = regionMatch[2].toUpperCase();
         const allowed = ["available", "restricted", "unavailable", "unknown"];
         if (!allowed.includes(body.availability_status)) return fail("Invalid regional availability status");
         if (body.availability_status !== "unknown" && !isHttps(body.evidence_url || "")) {
           return fail("An official HTTPS evidence URL is required for a confirmed regional status");
         }
         if (body.evidence_url && !isHttps(body.evidence_url)) return fail("Evidence URL must use HTTPS");
-        const exists = await sql`SELECT id FROM platforms WHERE id = ${regionMatch[1]} LIMIT 1`;
+        const exists = await sql\`SELECT id FROM platforms WHERE id = \${regionMatch[1]} LIMIT 1\`;
         if (!exists.length) return fail("Platform not found", 404);
-        const rows = await sql`
+        const rows = await sql\`
           INSERT INTO platform_region_availability
             (platform_id, country_code, availability_status, evidence_url, checked_at, notes, updated_at)
           VALUES
-            (${regionMatch[1]}, 'DZ', ${body.availability_status},
-             ${body.evidence_url || null},
-             now(), ${body.notes || null}, now())
+            (\${regionMatch[1]}, \${countryCode}, \${body.availability_status},
+             \${body.evidence_url || null},
+             now(), \${body.notes || null}, now())
           ON CONFLICT (platform_id, country_code) DO UPDATE SET
             availability_status = EXCLUDED.availability_status,
             evidence_url = EXCLUDED.evidence_url,
             checked_at = now(), notes = EXCLUDED.notes, updated_at = now()
-          RETURNING platform_id, country_code, availability_status, evidence_url, checked_at, notes
-        `;
+          RETURNING *
+        \`;
         return json({ data: rows[0] }, 200);
       }
 
