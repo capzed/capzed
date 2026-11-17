@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { Script } from "node:vm";
 
 async function checkInlineScripts() {
-  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "advertise.html", "guides.html", "methodology.html", "media-kit.html"]) {
+  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "advertise.html", "guides.html", "methodology.html", "media-kit.html", "news.html"]) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
     const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
@@ -83,12 +83,12 @@ const checks = [
     return "Admin platform, fee and region APIs reject unauthenticated requests: OK";
   },
   async () => {
-    for (const path of ["/compare.html", "/platform.html", "/advertise.html", "/guides.html", "/methodology.html", "/media-kit.html"]) {
+    for (const path of ["/compare.html", "/platform.html", "/advertise.html", "/guides.html", "/methodology.html", "/media-kit.html", "/news.html"]) {
       const { response, body } = await request(path);
       assert(response.ok && typeof body === "string" && body.toLowerCase().includes("<html"),
         `${path} did not return HTML (HTTP ${response.status}).`);
     }
-    return "Comparator, platform profile, guides, methodology and media kit pages: OK";
+    return "Comparator, platform profile, guides, methodology, media kit and news desk pages: OK";
   },
   async () => {
     const { response, body } = await request("/");
