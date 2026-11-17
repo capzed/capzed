@@ -64,7 +64,7 @@ async function handle(request, env) {
       return json({ data: rows });
     }
 
-    const platformDetailMatch = method === "GET" ? path.match(/^\\/api\\/platforms\\/([a-z0-9-]+)$/i) : null;
+    const platformDetailMatch = method === "GET" ? path.match(/^\/api\/platforms\/([a-z0-9-]+)$/i) : null;
     if (platformDetailMatch) {
       const slug = platformDetailMatch[1];
       const rows = await sql`
