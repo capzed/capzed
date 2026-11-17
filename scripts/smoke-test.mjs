@@ -27,6 +27,17 @@ const checks = [
     return "Public platforms, promotions and news APIs: OK";
   },
   async () => {
+    const { response, body } = await request("/api/ads?placement=top");
+    assert(response.ok && Array.isArray(body.data), `Sponsored ads API failed (HTTP ${response.status}).`);
+    return "Sponsored ad feed: OK";
+  },
+  async () => {
+    const { response, body } = await request("/api/ad-go/00000000-0000-0000-0000-000000000000");
+    assert(response.status === 404 && body.error === "Sponsored campaign is unavailable",
+      `Sponsored redirect must reject unavailable campaigns (HTTP ${response.status}).`);
+    return "Sponsored redirect rejects unavailable campaigns: OK";
+  },
+  async () => {
     const { response, body } = await request("/api/go/this-offer-does-not-exist");
     assert(response.status === 404 && body.error === "Offer is no longer available",
       `Affiliate redirect must reject unavailable offers (HTTP ${response.status}).`);
