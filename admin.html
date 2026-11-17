@@ -110,9 +110,23 @@ async function loadQueue(){
       const reject=document.createElement("button"); reject.textContent="Reject"; reject.style.background="#f28b8b";
       approve.addEventListener("click",()=>changeStatus(item.id,"verified"));
       reject.addEventListener("click",()=>changeStatus(item.id,"rejected"));
-      card.append(title,meta,source,document.createElement("br"),approve,reject); host.append(card);
+      card.append(title,meta,source,document.createElement("br"),approve,reject);
+      if(item.promo_code_id){
+        const codeLine=document.createElement("p");codeLine.className="note";codeLine.textContent="Promo code: "+item.promo_code;
+        const verifyCode=document.createElement("button");verifyCode.textContent="Mark code valid";verifyCode.style.marginRight="8px";
+        const rejectCode=document.createElement("button");rejectCode.textContent="Mark code invalid";rejectCode.style.background="#f28b8b";
+        verifyCode.addEventListener("click",()=>changeCodeStatus(item.promo_code_id,"valid"));
+        rejectCode.addEventListener("click",()=>changeCodeStatus(item.promo_code_id,"invalid"));
+        card.append(codeLine,verifyCode,rejectCode);
+      }
+      host.append(card);
     }
   } catch(e) { host.textContent = e.message; }
+}
+async function changeCodeStatus(id,status){
+  if(!confirm(status==="valid"?"Confirm you tested or verified this exact promo code?":"Mark this promo code invalid?"))return;
+  try{await api("/api/admin/promo-codes/"+id+"/status",{method:"PATCH",body:JSON.stringify({status})});await loadQueue();}
+  catch(e){$("items").textContent=e.message;}
 }
 async function changeStatus(id,status){
   if(!confirm(status==="verified"?"Confirm that you checked official terms, eligibility, dates and source?":"Reject this promotion?")) return;
