@@ -59,6 +59,8 @@ async function handle(request, env) {
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
                (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
                (SELECT taker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_taker,
+               (SELECT product_scope FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_product_scope,
+               (SELECT fee_tier FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_tier,
                (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
                (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
                (SELECT availability_status FROM platform_region_availability r
@@ -77,6 +79,8 @@ async function handle(request, env) {
                p.description,
                (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
                (SELECT taker_rate FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_taker,
+               (SELECT product_scope FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_product_scope,
+               (SELECT fee_tier FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_tier,
                (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
                (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
                (SELECT json_agg(json_build_object('slug', c.slug, 'name', c.name))
