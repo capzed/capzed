@@ -288,7 +288,7 @@ async function handle(request, env) {
       const recent = await sql`SELECT count(*)::int AS total FROM advertiser_leads
         WHERE lower(contact_email) = lower(${email}) AND created_at >= now() - interval '1 hour'`;
       if (recent[0].total >= 3) return fail("Too many inquiries from this email. Please try again later.", 429);
-      await sql`
+      const savedLead = await sql`
         INSERT INTO advertiser_leads
           (company_name, contact_name, contact_email, website_url, interest_type, message, source_page)
         VALUES
@@ -299,7 +299,62 @@ async function handle(request, env) {
            ${body.interest_type},
            ${String(body.message).trim().slice(0,2000)},
            ${String(body.source_page || "/advertise.html").slice(0,160)})
+        RETURNING id, created_at
       `;
+
+      // Email notification is best-effort: never lose a saved lead if the mail provider is unavailable.
+      if (env.RESEND_API_KEY) {
+        const notifyTo = env.ADVERTISER_NOTIFICATION_EMAIL || "cryptodotfree@gmail.com";
+        const lead = {
+          company: String(body.company_name).trim().slice(0,160),
+          contact: String(body.contact_name).trim().slice(0,120),
+          email: email.slice(0,180),
+          website: body.website_url || "Not provided",
+          interest: body.interest_type,
+          message: String(body.message).trim().slice(0,2000),
+          source: String(body.source_page || "/advertise.html").slice(0,160),
+          id: savedLead[0]?.id || "saved"
+        };
+        const mailText = [
+          "A new advertiser inquiry was submitted on AUTOMATET.",
+          "",
+          "Company: " + lead.company,
+          "Contact: " + lead.contact,
+          "Email: " + lead.email,
+          "Website: " + lead.website,
+          "Interest: " + lead.interest,
+          "Source: " + lead.source,
+          "Lead ID: " + lead.id,
+          "",
+          "Message:",
+          lead.message,
+          "",
+          "Open the AUTOMATET admin console to review and update this lead."
+        ].join("\\n");
+        try {
+          const mailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + env.RESEND_API_KEY,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              from: "AUTOMATET <notifications@automatet.com>",
+              to: [notifyTo],
+              subject: "New AUTOMATET advertiser inquiry — " + lead.company,
+              text: mailText,
+              reply_to: lead.email
+            })
+          });
+          if (!mailResponse.ok) {
+            console.error("AUTOMATET lead email failed:", mailResponse.status, (await mailResponse.text()).slice(0,500));
+          }
+        } catch (mailError) {
+          console.error("AUTOMATET lead email error:", mailError?.message || "unknown");
+        }
+      } else {
+        console.warn("RESEND_API_KEY is not configured; advertiser lead saved without email notification.");
+      }
       return json({ message: "Thank you. Your inquiry has been received." }, 201);
     }
 
