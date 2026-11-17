@@ -542,6 +542,35 @@ async function handle(request, env) {
         return json({ data: rows }, 200);
       }
 
+      const propProgramPrefix = "/api/admin/prop-firm-programs/";
+      const propProgramId = method === "PATCH" && path.startsWith(propProgramPrefix) && path.endsWith("/status")
+        ? path.slice(propProgramPrefix.length, -"/status".length) : "";
+      const propProgramMatch = /^[0-9a-f-]{36}$/i.test(propProgramId) ? propProgramId : null;
+      if (method === "PATCH" && propProgramMatch) {
+        const body = await request.json();
+        if (!["draft", "verified", "suspended"].includes(body.status)) return fail("Invalid programme status");
+        const current = await sql`
+          SELECT pf.id, pf.rules_url, pf.source_url, p.platform_type, p.status AS platform_status
+          FROM prop_firm_programs pf JOIN platforms p ON p.id = pf.platform_id
+          WHERE pf.id = ${propProgramMatch} LIMIT 1
+        `;
+        if (!current.length) return fail("Prop firm programme not found", 404);
+        if (body.status === "verified" &&
+            (current[0].platform_type !== "PROP_FIRM" || current[0].platform_status !== "published" ||
+             !isHttps(current[0].rules_url || "") || !isHttps(current[0].source_url || ""))) {
+          return fail("Publish the prop firm profile and confirm both official HTTPS sources before verifying this programme");
+        }
+        const rows = await sql`
+          UPDATE prop_firm_programs
+          SET status = ${body.status},
+              verified_at = CASE WHEN ${body.status} = 'verified' THEN now() ELSE NULL END,
+              updated_at = now()
+          WHERE id = ${propProgramMatch}
+          RETURNING id, program_name, status, verified_at
+        `;
+        return json({ data: rows[0] });
+      }
+
       if (method === "POST" && path === "/api/admin/prop-firm-programs") {
         const body = await request.json();
         const numericFields = ["phase1_profit_target_pct","phase2_profit_target_pct","daily_drawdown_pct","max_drawdown_pct","profit_split_min_pct","profit_split_max_pct","max_leverage"];
