@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d19">
+<title>Latest Crypto News & Market Updates | AUTOMATET</title>
+<meta name="description" content="Follow the latest Bitcoin, Ethereum, exchange, regulation, security and digital asset news from established publishers.">
+<meta property="og:title" content="AUTOMATET News Desk">
+<meta property="og:description" content="The crypto pulse: fresh headlines, clear summaries and original sources.">
+<meta http-equiv="refresh" content="900">
+<style>
+:root{--bg:#080d19;--panel:#101a2b;--panel2:#0c1525;--line:#23334b;--text:#f2f6ff;--muted:#9aaac2;--cyan:#50e5d0;--blue:#6d8cff;--lime:#c5f36a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 70% -10%,#1b3152 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}a{color:inherit;text-decoration:none}.wrap{width:min(1120px,calc(100% - 36px));margin:auto}
+header{position:sticky;top:0;z-index:5;background:#080d19ed;backdrop-filter:blur(18px);border-bottom:1px solid #ffffff12}.nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:1.7px}.mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#07111c;font-weight:1000;font-size:21px}.navlinks{display:flex;gap:22px;color:#b9c7dc;font-size:13px}.navlinks a:hover{color:var(--cyan)}
+.hero{padding:62px 0 30px}.kicker{color:var(--cyan);font-size:10px;letter-spacing:2px;font-weight:900;text-transform:uppercase}.hero h1{font-size:clamp(38px,6vw,64px);line-height:1.04;letter-spacing:-2.5px;margin:12px 0}.hero h1 span{color:var(--cyan)}.lead{color:var(--muted);font-size:16px;max-width:680px}.status{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;margin-top:20px}.pulse{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 12px var(--lime)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:18px 0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filter{background:#ffffff06;color:#b7c5d9;border:1px solid var(--line);padding:8px 13px;border-radius:30px;font-size:11px;cursor:pointer}.filter.active,.filter:hover{background:#50e5d015;border-color:#50e5d088;color:var(--cyan)}.count{font-size:11px;color:var(--muted);white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding-bottom:55px}.card{background:linear-gradient(145deg,#111e31,#0d1625);border:1px solid var(--line);border-radius:18px;padding:19px;min-height:230px;display:flex;flex-direction:column;transition:.2s}.card:hover{transform:translateY(-3px);border-color:#50e5d077}.cardtop{display:flex;align-items:center;justify-content:space-between;gap:10px}.publisher{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.8px;text-transform:uppercase}.date{color:#7f91aa;font-size:10px}.card h2{font-size:18px;line-height:1.3;margin:17px 0 9px;letter-spacing:-.3px}.card p{font-size:12px;color:var(--muted);margin:0 0 20px}.source{margin-top:auto;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--cyan);font-weight:800}.empty,.error{grid-column:1/-1;border:1px solid var(--line);border-radius:16px;padding:26px;color:var(--muted);background:#ffffff04}
+.note{border:1px solid var(--line);border-radius:15px;padding:17px 20px;color:var(--muted);font-size:11px;margin-bottom:42px}.note strong{color:var(--text)}footer{border-top:1px solid #ffffff14;padding:28px 0 38px;color:#8192aa;font-size:11px}.footrow{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.navlinks{gap:12px}}@media(max-width:560px){.grid{grid-template-columns:1fr}.nav{height:64px}.navlinks{gap:10px;font-size:11px}.hero{padding-top:42px}.toolbar{align-items:start;flex-direction:column}.hero h1{letter-spacing:-1.7px}}
+</style>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="/"><span class="mark">A</span><span>AUTOMATET</span></a><nav class="navlinks"><a href="/">Home</a><a href="/#deals">Deals</a><a href="/compare.html">Compare</a><a href="/guides.html">Guides</a><a href="/advertise.html">Advertise</a></nav></div></header>
+<main class="wrap">
+<section class="hero"><div class="kicker">AUTOMATET · NEWS DESK</div><h1>The crypto pulse.<br><span>Without the noise.</span></h1><p class="lead">Market moves, exchange announcements, regulation, security and blockchain developments — selected from established publishers and linked to their original reporting.</p><div class="status"><span class="pulse"></span><span id="feedStatus">Connecting to the live news desk…</span></div></section>
+<div class="toolbar"><div class="filters" id="filters"><button class="filter active" data-source="all">All stories</button></div><div class="count" id="count">Loading stories…</div></div>
+<section class="grid" id="newsGrid"><div class="empty">Loading the latest headlines…</div></section>
+<div class="note"><strong>Editorial note.</strong> Headlines and short excerpts are presented for discovery and remain the property of their publishers. Open each original report for full context. Publication times may differ from the time a story is updated. Sponsored content, when present, is labelled separately.</div>
+</main>
+<footer><div class="wrap footrow"><span>© 2026 AUTOMATET · Independent crypto discovery platform</span><span><a href="/methodology.html">How we verify</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></span></div></footer>
+<script>
+const grid=document.getElementById('newsGrid'),filters=document.getElementById('filters'),count=document.getElementById('count'),statusLine=document.getElementById('feedStatus');
+let stories=[],activeSource='all';
+function safeDate(value){const d=new Date(value);return Number.isNaN(d.getTime())?'Recent update':d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC'}
+function render(){
+ const visible=activeSource==='all'?stories:stories.filter(x=>x.publisher===activeSource);
+ count.textContent=visible.length+' stories · newest first';
+ grid.textContent='';
+ if(!visible.length){const e=document.createElement('div');e.className='empty';e.textContent='No stories from this publisher yet.';grid.append(e);return}
+ for(const item of visible){
+  const card=document.createElement('article');card.className='card';
+  const top=document.createElement('div');top.className='cardtop';
+  const publisher=document.createElement('span');publisher.className='publisher';publisher.textContent=item.publisher||'Crypto news';
+  const date=document.createElement('span');date.className='date';date.textContent=safeDate(item.published_at);
+  top.append(publisher,date);
+  const title=document.createElement('h2');title.textContent=item.headline;
+  const summary=document.createElement('p');summary.textContent=item.summary||'Open the original report for details.';
+  const link=document.createElement('a');link.className='source';link.href=item.canonical_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Read original report ↗';
+  card.append(top,title,summary,link);grid.append(card);
+ }
+}
+function makeFilters(){
+ const sources=[...new Set(stories.map(x=>x.publisher).filter(Boolean))].sort();
+ filters.textContent='';
+ const all=document.createElement('button');all.className='filter active';all.dataset.source='all';all.textContent='All stories';filters.append(all);
+ for(const source of sources){const b=document.createElement('button');b.className='filter';b.dataset.source=source;b.textContent=source;filters.append(b)}
+ filters.addEventListener('click',event=>{const b=event.target.closest('button[data-source]');if(!b)return;activeSource=b.dataset.source;for(const el of filters.querySelectorAll('.filter'))el.classList.toggle('active',el===b);render()});
+}
+async function load(){
+ try{
+  const response=await fetch('/api/news',{headers:{accept:'application/json'}});
+  if(!response.ok)throw new Error('News service unavailable');
+  const payload=await response.json();stories=Array.isArray(payload.data)?payload.data:[];
+  if(!stories.length){grid.innerHTML='<div class="empty">No recent headlines are available. Please check back shortly.</div>';count.textContent='0 stories';statusLine.textContent='News feed is waiting for its next update.';return}
+  makeFilters();render();statusLine.textContent='Live RSS sources · refreshed '+safeDate(payload.refreshed_at);
+ }catch(error){grid.innerHTML='<div class="error">The news desk is temporarily unavailable. Please refresh the page shortly.</div>';count.textContent='Feed unavailable';statusLine.textContent='Unable to connect to the news feed.'}
+}
+load();
+</script>
+</body></html>
