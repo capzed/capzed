@@ -220,7 +220,7 @@ async function handle(request, env) {
         return json({ data: rows }, 200);
       }
 
-      const regionMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/platforms\\/([0-9a-f-]{36})\\/region\\/DZ$/i) : null;
+      const regionMatch = method === "PATCH" ? path.match(/^\/api\/admin\/platforms\/([0-9a-f-]{36})\/region\/DZ$/i) : null;
       if (regionMatch) {
         const body = await request.json();
         const allowed = ["available", "restricted", "unavailable", "unknown"];
