@@ -84,10 +84,28 @@ $("promotion").addEventListener("submit", async (event) => {
   } catch(e) { $("result").textContent = e.message; }
 });
 async function loadQueue(){
+  const host=$("items"); host.textContent="Loading…";
   try {
     const data = await api("/api/admin/promotions/pending");
-    $("items").textContent = data.data.length ? data.data.map(x=>x.title+" · "+x.id).join("\n") : "No pending promotions.";
-  } catch(e) { $("items").textContent = e.message; }
+    host.textContent="";
+    if (!data.data.length) { host.textContent="No pending promotions."; return; }
+    for (const item of data.data) {
+      const card=document.createElement("div"); card.style.cssText="padding:12px 0;border-bottom:1px solid #263752";
+      const title=document.createElement("strong"); title.textContent=item.title;
+      const meta=document.createElement("p"); meta.className="note"; meta.textContent=item.slug+" · "+item.id;
+      const source=document.createElement("a"); source.href=item.source_url; source.target="_blank"; source.rel="noopener noreferrer"; source.textContent="Open verification source"; source.style.color="#50e5d0";
+      const approve=document.createElement("button"); approve.textContent="Verify & publish"; approve.style.marginRight="8px";
+      const reject=document.createElement("button"); reject.textContent="Reject"; reject.style.background="#f28b8b";
+      approve.addEventListener("click",()=>changeStatus(item.id,"verified"));
+      reject.addEventListener("click",()=>changeStatus(item.id,"rejected"));
+      card.append(title,meta,source,document.createElement("br"),approve,reject); host.append(card);
+    }
+  } catch(e) { host.textContent = e.message; }
+}
+async function changeStatus(id,status){
+  if(!confirm(status==="verified"?"Confirm that you checked official terms, eligibility, dates and source?":"Reject this promotion?")) return;
+  try { await api("/api/admin/promotions/"+id+"/status",{method:"PATCH",body:JSON.stringify({status})}); await loadQueue(); }
+  catch(e) { $("items").textContent=e.message; }
 }
 $("refresh").addEventListener("click",loadQueue);
 $("platform").addEventListener("submit", async (event) => {
