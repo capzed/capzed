@@ -281,12 +281,12 @@ async function handle(request, env) {
       }
 
       if (method === "GET" && path === "/api/admin/regions") {
-        const rows = await sql\`
+        const rows = await sql`
           SELECT p.id AS platform_id, p.name AS platform_name, p.slug,
                  r.country_code, r.availability_status, r.evidence_url, r.checked_at, r.notes
           FROM platforms p LEFT JOIN platform_region_availability r ON r.platform_id = p.id
           ORDER BY p.name ASC, r.country_code ASC LIMIT 1000
-        \`;
+        `;
         return json({ data: rows }, 200);
       }
 
@@ -300,21 +300,21 @@ async function handle(request, env) {
           return fail("An official HTTPS evidence URL is required for a confirmed regional status");
         }
         if (body.evidence_url && !isHttps(body.evidence_url)) return fail("Evidence URL must use HTTPS");
-        const exists = await sql\`SELECT id FROM platforms WHERE id = \${regionMatch[1]} LIMIT 1\`;
+        const exists = await sql`SELECT id FROM platforms WHERE id = ${regionMatch[1]} LIMIT 1`;
         if (!exists.length) return fail("Platform not found", 404);
-        const rows = await sql\`
+        const rows = await sql`
           INSERT INTO platform_region_availability
             (platform_id, country_code, availability_status, evidence_url, checked_at, notes, updated_at)
           VALUES
-            (\${regionMatch[1]}, \${countryCode}, \${body.availability_status},
-             \${body.evidence_url || null},
-             now(), \${body.notes || null}, now())
+            (${regionMatch[1]}, ${countryCode}, ${body.availability_status},
+             ${body.evidence_url || null},
+             now(), ${body.notes || null}, now())
           ON CONFLICT (platform_id, country_code) DO UPDATE SET
             availability_status = EXCLUDED.availability_status,
             evidence_url = EXCLUDED.evidence_url,
             checked_at = now(), notes = EXCLUDED.notes, updated_at = now()
           RETURNING *
-        \`;
+        `;
         return json({ data: rows[0] }, 200);
       }
 
