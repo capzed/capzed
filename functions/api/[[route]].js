@@ -114,6 +114,42 @@ async function handle(request, env) {
       }});
     }
 
+    if (method === "GET" && path === "/api/ads") {
+      const placement = url.searchParams.get("placement") || "";
+      if (!/^[a-z0-9_-]{2,40}$/i.test(placement)) return fail("Invalid ad placement");
+      const rows = await sql`
+        SELECT id, name, placement_key, creative_url, sponsor_label
+        FROM ad_campaigns
+        WHERE placement_key = ${placement} AND status = 'active'
+          AND (starts_at IS NULL OR starts_at <= now())
+          AND (ends_at IS NULL OR ends_at > now())
+        ORDER BY created_at DESC LIMIT 3
+      `;
+      if (rows.length) {
+        const ids = rows.map((row) => row.id);
+        await sql`UPDATE ad_campaigns SET impressions_count = impressions_count + 1, updated_at = now()
+          WHERE id = ANY(${ids}::uuid[])`;
+      }
+      return json({ data: rows });
+    }
+
+    const adClickMatch = method === "GET" ? path.match(/^\\/api\\/ad-go\\/([0-9a-f-]{36})$/i) : null;
+    if (adClickMatch) {
+      const rows = await sql`
+        SELECT id, target_url FROM ad_campaigns
+        WHERE id = ${adClickMatch[1]} AND status = 'active'
+          AND (starts_at IS NULL OR starts_at <= now())
+          AND (ends_at IS NULL OR ends_at > now())
+        LIMIT 1
+      `;
+      if (!rows.length || !isHttps(rows[0].target_url)) return fail("Sponsored campaign is unavailable", 404);
+      await sql`UPDATE ad_campaigns SET clicks_count = clicks_count + 1, updated_at = now() WHERE id = ${rows[0].id}`;
+      return new Response(null, { status: 302, headers: {
+        "location": rows[0].target_url, "cache-control": "no-store",
+        "referrer-policy": "no-referrer", "x-content-type-options": "nosniff"
+      }});
+    }
+
     if (method === "GET" && path === "/api/news") {
       const rows = await sql`
         SELECT n.id, n.headline, n.summary, n.canonical_url, n.image_url,
@@ -140,9 +176,57 @@ async function handle(request, env) {
               AND (ends_at IS NULL OR ends_at > now())) AS promotions_active,
             (SELECT count(*)::int FROM news WHERE status = 'published') AS news_published,
             (SELECT count(*)::int FROM affiliate_clicks
-              WHERE clicked_at >= now() - interval '30 days') AS affiliate_clicks_30d
+              WHERE clicked_at >= now() - interval '30 days') AS affiliate_clicks_30d,
+            (SELECT count(*)::int FROM ad_campaigns WHERE status = 'active'
+              AND (starts_at IS NULL OR starts_at <= now())
+              AND (ends_at IS NULL OR ends_at > now())) AS ads_active,
+            (SELECT COALESCE(sum(clicks_count),0)::int FROM ad_campaigns) AS ad_clicks_total
         `;
         return json({ data: rows[0] }, 200);
+      }
+
+      if (method === "GET" && path === "/api/admin/ads") {
+        const rows = await sql`
+          SELECT a.id, a.name, a.placement_key, a.target_url, a.sponsor_label,
+                 a.starts_at, a.ends_at, a.status, a.impressions_count, a.clicks_count,
+                 p.company_name AS partner_name
+          FROM ad_campaigns a LEFT JOIN partners p ON p.id = a.partner_id
+          ORDER BY a.created_at DESC LIMIT 100
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "POST" && path === "/api/admin/ads") {
+        const body = await request.json();
+        const placement = String(body.placement_key || "");
+        if (!body.name?.trim() || !/^[a-z0-9_-]{2,40}$/i.test(placement) ||
+            !isHttps(body.target_url || "") || !String(body.sponsor_label || "").trim()) {
+          return fail("Name, valid placement, HTTPS target URL and sponsor label are required");
+        }
+        if (body.creative_url && !isHttps(body.creative_url)) return fail("Creative URL must use HTTPS");
+        const rows = await sql`
+          INSERT INTO ad_campaigns
+            (name, placement_key, creative_url, target_url, starts_at, ends_at, status, sponsor_label)
+          VALUES
+            (${body.name.trim()}, ${placement}, ${body.creative_url || null},
+             ${body.target_url}, ${body.starts_at || null}, ${body.ends_at || null},
+             'draft', ${String(body.sponsor_label).trim()})
+          RETURNING id, name, placement_key, status
+        `;
+        return json({ data: rows[0], message: "Campaign saved as draft. Activate it after checking the advertiser and creative." }, 201);
+      }
+
+      const adStatusMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/ads\\/([0-9a-f-]{36})\\/status$/i) : null;
+      if (adStatusMatch) {
+        const body = await request.json();
+        if (!["draft", "scheduled", "active", "paused", "completed"].includes(body.status)) return fail("Invalid campaign status");
+        const rows = await sql`
+          UPDATE ad_campaigns SET status = ${body.status}, updated_at = now()
+          WHERE id = ${adStatusMatch[1]}
+          RETURNING id, name, status
+        `;
+        if (!rows.length) return fail("Campaign not found", 404);
+        return json({ data: rows[0] });
       }
 
       if (method === "GET" && path === "/api/admin/promotions/pending") {
