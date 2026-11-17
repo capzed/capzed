@@ -152,7 +152,9 @@ async function loadPlatforms(){
   const host=$("platformList"); host.textContent="Loading…";
   try {
     const result=await api("/api/admin/platforms");
-    $("platformSelect").innerHTML='<option value="">Choose a platform</option>'+result.data.map(p=>'<option value="'+p.id+'">'+p.name+' ('+p.platform_type+')</option>').join("");
+    const select=$("platformSelect");select.textContent="";
+    const first=document.createElement("option");first.value="";first.textContent="Choose a platform";select.append(first);
+    for(const p of result.data){const option=document.createElement("option");option.value=p.id;option.textContent=p.name+" ("+p.platform_type+")";select.append(option);}
     host.textContent="";
     if(!result.data.length){host.textContent="No platforms yet.";return;}
     for(const p of result.data){
