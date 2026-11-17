@@ -91,6 +91,39 @@ async function handle(request, env) {
     if (path.startsWith("/api/admin/")) {
       if (!authorized(request, env)) return fail("Unauthorized", 401);
 
+      if (method === "GET" && path === "/api/admin/promotions/pending") {
+        const rows = await sql`
+          SELECT id, title, slug, source_url, created_at
+          FROM promotions WHERE status = 'pending'
+          ORDER BY created_at ASC LIMIT 100
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "GET" && path === "/api/admin/platforms") {
+        const rows = await sql`
+          SELECT id, name, slug, platform_type
+          FROM platforms ORDER BY name ASC LIMIT 100
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "POST" && path === "/api/admin/platforms") {
+        const body = await request.json();
+        if (!["CEX","DEX","WALLET","OTHER"].includes(body.platform_type) ||
+            !body.slug?.trim() || !body.name?.trim() || !isHttps(body.website_url || "")) {
+          return fail("Provide a name, slug, valid platform type, and HTTPS website URL");
+        }
+        const rows = await sql`
+          INSERT INTO platforms (slug, name, platform_type, website_url, logo_url, description, status)
+          VALUES (${body.slug.trim()}, ${body.name.trim()}, ${body.platform_type},
+                  ${body.website_url}, ${body.logo_url && isHttps(body.logo_url) ? body.logo_url : null},
+                  ${body.description || null}, 'draft')
+          RETURNING id, slug, name, platform_type, status
+        `;
+        return json({ data: rows[0], message: "Platform created as draft." }, 201);
+      }
+
       if (method === "POST" && path === "/api/admin/promotions") {
         const body = await request.json();
         const required = ["platform_id", "slug", "title", "summary", "offer_type", "terms_url", "landing_url", "source_url"];
