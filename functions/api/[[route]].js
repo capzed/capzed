@@ -282,7 +282,7 @@ async function handle(request, env) {
     }
 
     if (method === "GET" && path === "/api/news") {
-      await refreshRssNews(sql);
+      try { await refreshRssNews(sql); } catch (error) { console.error("RSS refresh failed", error); }
       const rows = await sql`
         SELECT n.id, n.headline, n.summary, n.canonical_url, n.image_url,
                n.published_at, s.name AS publisher, s.domain AS publisher_domain
