@@ -102,7 +102,7 @@ async function handle(request, env) {
                  (SELECT pc.id FROM promo_codes pc WHERE pc.promotion_id = p.id ORDER BY pc.created_at DESC LIMIT 1) AS promo_code_id,
                  (SELECT pc.code FROM promo_codes pc WHERE pc.promotion_id = p.id ORDER BY pc.created_at DESC LIMIT 1) AS promo_code
           FROM promotions p WHERE p.status = 'pending'
-          ORDER BY created_at ASC LIMIT 100
+          ORDER BY p.created_at ASC LIMIT 100
         `;
         return json({ data: rows }, 200);
       }
