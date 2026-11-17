@@ -39,8 +39,13 @@ const checks = [
     for (const path of ["/api/platforms", "/api/promotions", "/api/news"]) {
       const { response, body } = await request(path);
       assert(response.ok && Array.isArray(body.data), `${path} did not return a data array (HTTP ${response.status}).`);
+      if (path === "/api/news") {
+        assert(body.data.length >= 4, "News feed is empty or missing its seeded editorial stories.");
+        assert(body.data.every(item => typeof item.headline === "string" && item.canonical_url?.startsWith("https://")),
+          "News feed contains an incomplete headline or non-HTTPS source URL.");
+      }
     }
-    return "Public platforms, promotions and news APIs: OK";
+    return "Public APIs and populated, source-linked news feed: OK";
   },
   async () => {
     const { response, body } = await request("/api/platforms/not-a-real-platform");
