@@ -11,6 +11,7 @@ let platforms=[];
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fee=v=>v===null||v===undefined?"Not yet verified":safe(v)+"%";
+const countryName=code=>{try{return code?new Intl.DisplayNames([navigator.language||"en"],{type:"region"}).of(code):"";}catch{return code||"";}};
 async function init(){
  const r=await fetch("/api/platforms");const b=await r.json();if(!r.ok)throw new Error("Platform list unavailable");platforms=b.data||[];
  for(const id of ["p1","p2","p3"]){for(const p of platforms){const o=document.createElement("option");o.value=p.slug;o.textContent=p.name;$(id).append(o);}}
@@ -25,7 +26,7 @@ $("compare").addEventListener("click",()=>{
   ["Type",p=>safe(p.platform_type)],
   ["Maker fee",p=>fee(p.trading_fee_maker)],
   ["Taker fee",p=>fee(p.trading_fee_taker)],
-  ["Regional availability",p=>Array.isArray(p.regional_availability)&&p.regional_availability.length?p.regional_availability.map(r=>safe(r.country_code)+": "+safe(({available:"Available",restricted:"Restricted",unavailable:"Unavailable",unknown:"Not verified"}[r.status]||"Not verified"))).join(" · "):"No country-specific records yet"],
+  ["Regional availability",p=>{const country=countryName(p.visitor_country_code);const records=Array.isArray(p.regional_availability)?p.regional_availability:[];if(!country)return "Not displayed — country not determined for this visit";if(!records.length)return "Not verified for "+safe(country);const r=records[0];return safe(country)+": "+safe(({available:"Confirmed available",restricted:"Restrictions reported",unavailable:"Confirmed unavailable",unknown:"Not yet verified"}[r.status]||"Not yet verified"));}],
   ["Official website",p=>'<a href="'+safe(p.website_url)+'" target="_blank" rel="noopener noreferrer">Visit official site ↗</a>'],
   ["Profile",p=>'<a href="/platform.html?slug='+encodeURIComponent(p.slug)+'">View details ↗</a>']
  ];
