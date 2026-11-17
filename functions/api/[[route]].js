@@ -57,7 +57,10 @@ async function handle(request, env) {
     if (method === "GET" && path === "/api/platforms") {
       const rows = await sql`
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
-               trading_fee_maker, trading_fee_taker,
+               (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
+               (SELECT taker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_taker,
+               (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
+               (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
                (SELECT availability_status FROM platform_region_availability r
                  WHERE r.platform_id = platforms.id AND r.country_code = 'DZ') AS algeria_status
         FROM platforms WHERE status = 'published'
@@ -71,7 +74,11 @@ async function handle(request, env) {
       const slug = platformDetailMatch[1];
       const rows = await sql`
         SELECT p.id, p.slug, p.name, p.platform_type, p.website_url, p.logo_url,
-               p.description, p.trading_fee_maker, p.trading_fee_taker,
+               p.description,
+               (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
+               (SELECT taker_rate FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_taker,
+               (SELECT source_url FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_source_url,
+               (SELECT checked_at FROM platform_fee_sources fs WHERE fs.platform_id = p.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS fee_checked_at,
                (SELECT json_agg(json_build_object('slug', c.slug, 'name', c.name))
                   FROM platform_categories pc JOIN categories c ON c.id = pc.category_id
                  WHERE pc.platform_id = p.id) AS categories,
@@ -244,6 +251,49 @@ async function handle(request, env) {
           RETURNING platform_id, country_code, availability_status, evidence_url, checked_at, notes
         `;
         return json({ data: rows[0] }, 200);
+      }
+
+      if (method === "GET" && path === "/api/admin/fees") {
+        const rows = await sql`
+          SELECT fs.id, fs.platform_id, p.name AS platform_name, p.slug,
+                 fs.product_scope, fs.fee_tier, fs.maker_rate, fs.taker_rate,
+                 fs.fee_currency, fs.source_url, fs.checked_at, fs.notes, fs.is_current
+          FROM platform_fee_sources fs JOIN platforms p ON p.id = fs.platform_id
+          ORDER BY p.name ASC, fs.product_scope ASC, fs.checked_at DESC LIMIT 300
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      if (method === "POST" && path === "/api/admin/fees") {
+        const body = await request.json();
+        const scopes = ["spot", "futures", "margin", "other"];
+        const rate = (v) => v === null || v === "" || v === undefined ? null : Number(v);
+        const maker = rate(body.maker_rate), taker = rate(body.taker_rate);
+        if (!/^[0-9a-f-]{36}$/i.test(body.platform_id || "") ||
+            !scopes.includes(body.product_scope) || !String(body.fee_tier || "").trim() ||
+            !isHttps(body.source_url || "") ||
+            (maker !== null && (!Number.isFinite(maker) || maker < -100 || maker > 100)) ||
+            (taker !== null && (!Number.isFinite(taker) || taker < -100 || taker > 100)) ||
+            (maker === null && taker === null)) {
+          return fail("Platform, product scope, fee tier, at least one valid rate and official HTTPS source are required");
+        }
+        const exists = await sql`SELECT id FROM platforms WHERE id = ${body.platform_id} LIMIT 1`;
+        if (!exists.length) return fail("Platform not found", 404);
+        await sql`UPDATE platform_fee_sources SET is_current = false, updated_at = now()
+          WHERE platform_id = ${body.platform_id} AND product_scope = ${body.product_scope}
+            AND fee_tier = ${String(body.fee_tier).trim()} AND is_current = true`;
+        const rows = await sql`
+          INSERT INTO platform_fee_sources
+            (platform_id, product_scope, fee_tier, maker_rate, taker_rate, fee_currency,
+             source_url, checked_at, notes, is_current)
+          VALUES
+            (${body.platform_id}, ${body.product_scope}, ${String(body.fee_tier).trim()},
+             ${maker}, ${taker}, ${String(body.fee_currency || "%").slice(0, 12)},
+             ${body.source_url}, now(), ${body.notes || null}, true)
+          RETURNING id, platform_id, product_scope, fee_tier, maker_rate, taker_rate,
+                    source_url, checked_at, notes, is_current
+        `;
+        return json({ data: rows[0], message: "Source-backed fee record saved. Previous record retained as history." }, 201);
       }
 
       if (method === "GET" && path === "/api/admin/partners") {
