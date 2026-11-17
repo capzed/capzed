@@ -80,8 +80,8 @@ async function api(path, options={}) {
 $("connect").addEventListener("click", async () => {
   token = $("token").value.trim();
   try {
-    await api("/api/health");
-    $("connection").textContent = "Connected to API and database.";
+    await api("/api/admin/platforms");
+    $("connection").textContent = "Admin token accepted; database connected.";
     $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden");
     await loadPlatforms(); await loadQueue();
   } catch(e) { token=""; $("connection").textContent = e.message; }
