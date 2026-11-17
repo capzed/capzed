@@ -64,6 +64,29 @@ async function handle(request, env) {
       return json({ data: rows });
     }
 
+    const platformDetailMatch = method === "GET" ? path.match(/^\\/api\\/platforms\\/([a-z0-9-]+)$/i) : null;
+    if (platformDetailMatch) {
+      const slug = platformDetailMatch[1];
+      const rows = await sql`
+        SELECT p.id, p.slug, p.name, p.platform_type, p.website_url, p.logo_url,
+               p.description, p.trading_fee_maker, p.trading_fee_taker,
+               (SELECT json_agg(json_build_object('slug', c.slug, 'name', c.name))
+                  FROM platform_categories pc JOIN categories c ON c.id = pc.category_id
+                 WHERE pc.platform_id = p.id) AS categories,
+               (SELECT json_build_object('status', r.availability_status, 'evidence_url', r.evidence_url,
+                         'checked_at', r.checked_at, 'notes', r.notes)
+                  FROM platform_region_availability r
+                 WHERE r.platform_id = p.id AND r.country_code = 'DZ') AS algeria,
+               (SELECT count(*)::int FROM promotions pr
+                 WHERE pr.platform_id = p.id AND pr.status = 'verified'
+                   AND (pr.starts_at IS NULL OR pr.starts_at <= now())
+                   AND (pr.ends_at IS NULL OR pr.ends_at > now())) AS active_promotions
+        FROM platforms p WHERE p.slug = ${slug} AND p.status = 'published' LIMIT 1
+      `;
+      if (!rows.length) return fail("Platform not found", 404);
+      return json({ data: rows[0] });
+    }
+
     if (method === "GET" && path === "/api/promotions") {
       const rows = await sql`
         SELECT p.id, p.slug, p.title, p.summary, p.offer_type, p.reward_amount,
