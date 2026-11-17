@@ -42,6 +42,18 @@
 <label>Notes / exact terms</label><textarea name="notes"></textarea>
 <button type="submit">Save Algeria eligibility record</button>
 </form><div id="regionResult" class="status"></div><div id="regionList" class="status">No regional records loaded.</div>
+<hr style="border:0;border-top:1px solid #263752;margin:22px 0">
+<h2>Official trading fee schedule</h2>
+<p class="note">Store fees by product and tier. A fee is never treated as universal: source URL and check date are required. Rates are percentages (for example 0.1 means 0.1%).</p>
+<form id="feeForm">
+<label>Platform</label><select name="platform_id" id="feePlatform" required><option value="">Load platforms first</option></select>
+<div class="row"><div><label>Product</label><select name="product_scope"><option value="spot">Spot</option><option value="futures">Futures</option><option value="margin">Margin</option><option value="other">Other</option></select></div><div><label>Fee tier</label><input name="fee_tier" value="regular" required></div></div>
+<div class="row"><div><label>Maker rate (%)</label><input name="maker_rate" type="number" step="0.00000001" min="-100" max="100" placeholder="0.1"></div><div><label>Taker rate (%)</label><input name="taker_rate" type="number" step="0.00000001" min="-100" max="100" placeholder="0.1"></div></div>
+<label>Fee currency / unit</label><input name="fee_currency" value="%">
+<label>Official fee schedule URL (HTTPS)</label><input name="source_url" type="url" required>
+<label>Notes / region / pair exceptions</label><textarea name="notes"></textarea>
+<button type="submit">Save fee evidence</button>
+</form><div id="feeResult" class="status"></div><div id="feeList" class="status">No fee records loaded.</div>
 </section>
 <section class="panel hidden" id="editor">
 <h2>Submit a promotion for review</h2>
@@ -121,7 +133,7 @@ $("connect").addEventListener("click", async () => {
     await api("/api/admin/platforms");
     $("connection").textContent = "Admin token accepted; database connected.";
     $("metrics").classList.remove("hidden"); $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden"); $("newsEditor").classList.remove("hidden"); $("ads").classList.remove("hidden");
-    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadQueue(); await loadPartners(); await loadAds();
+    await loadMetrics(); await loadPlatforms(); await loadRegions(); await loadFees(); await loadQueue(); await loadPartners(); await loadAds();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -175,6 +187,27 @@ async function loadRegions(){
   }
  }catch(e){host.textContent=e.message;}
 }
+async function loadFees(){
+ const host=$("feeList");host.textContent="Loading…";
+ try{
+  const result=await api("/api/admin/fees");host.textContent="";
+  if(!result.data.length){host.textContent="No fee records yet.";return;}
+  for(const item of result.data){
+   const row=document.createElement("div");row.style.cssText="padding:9px 0;border-bottom:1px solid #263752";
+   const name=document.createElement("strong");name.textContent=item.platform_name+" · "+item.product_scope+" · "+item.fee_tier;
+   const meta=document.createElement("p");meta.className="note";meta.textContent="Maker: "+(item.maker_rate??"—")+"% · Taker: "+(item.taker_rate??"—")+"% · "+(item.is_current?"Current":"Historical")+" · checked "+new Date(item.checked_at).toLocaleDateString();
+   const link=document.createElement("a");link.href=item.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Official source ↗";link.style.color="#50e5d0";
+   row.append(name,meta,link);if(item.notes){const note=document.createElement("p");note.className="note";note.textContent=item.notes;row.append(note);}host.append(row);
+  }
+ }catch(e){host.textContent=e.message;}
+}
+$("feeForm").addEventListener("submit",async(event)=>{
+ event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
+ for(const key of ["maker_rate","taker_rate"])body[key]=body[key]===""?null:Number(body[key]);
+ try{const result=await api("/api/admin/fees",{method:"POST",body:JSON.stringify(body)});
+ $("feeResult").textContent=JSON.stringify(result,null,2);event.currentTarget.reset();event.currentTarget.elements.fee_tier.value="regular";event.currentTarget.elements.fee_currency.value="%";await loadFees();}
+ catch(e){$("feeResult").textContent=e.message;}
+});
 $("regionForm").addEventListener("submit",async(event)=>{
  event.preventDefault();const body=Object.fromEntries(new FormData(event.currentTarget).entries());
  const id=body.platform_id;delete body.platform_id;body.evidence_url=body.evidence_url||null;body.notes=body.notes||null;
@@ -299,8 +332,10 @@ async function loadPlatforms(){
   try {
     const result=await api("/api/admin/platforms");
     const select=$("platformSelect");select.textContent="";
+    const feeSelect=$("feePlatform");feeSelect.textContent="";
     const first=document.createElement("option");first.value="";first.textContent="Choose a platform";select.append(first);
-    for(const p of result.data){const option=document.createElement("option");option.value=p.id;option.textContent=p.name+" ("+p.platform_type+")";select.append(option);}
+    const feeFirst=document.createElement("option");feeFirst.value="";feeFirst.textContent="Choose a platform";feeSelect.append(feeFirst);
+    for(const p of result.data){const option=document.createElement("option");option.value=p.id;option.textContent=p.name+" ("+p.platform_type+")";select.append(option);const feeOption=document.createElement("option");feeOption.value=p.id;feeOption.textContent=p.name+" ("+p.platform_type+")";feeSelect.append(feeOption);}
     host.textContent="";
     if(!result.data.length){host.textContent="No platforms yet.";return;}
     for(const p of result.data){
