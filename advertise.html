@@ -22,13 +22,15 @@
 <article class="card"><h2>Featured offers</h2><p>Submit official bonuses, fee discounts, rewards or competitions for verification before publication.</p></article>
 </div>
 <section class="formbox">
-<h2>Start a partnership discussion</h2>
+<h2>Start a partnership discussion</h2><p><a href="/media-kit.html">View the AUTOMATET media kit and campaign formats ↗</a></p>
 <p>Send your details. This is an inquiry only, not a paid booking. Campaign formats, availability and commercial terms are agreed individually.</p>
 <form id="leadForm">
 <label>Company / project name</label><input name="company_name" maxlength="160" required>
 <div class="row"><div><label>Your name</label><input name="contact_name" maxlength="120" required></div><div><label>Business email</label><input name="contact_email" type="email" maxlength="180" required></div></div>
 <label>Website (optional, HTTPS)</label><input name="website_url" type="url" placeholder="https://">
 <label>What are you interested in?</label><select name="interest_type" required><option value="sponsored_placement">Sponsored placements</option><option value="affiliate_partnership">Affiliate partnership</option><option value="featured_offer">Submit a featured offer</option><option value="campaign_reporting">Campaign reporting</option><option value="other">Other</option></select>
+<div class="row"><div><label>Target markets / countries</label><input name="target_markets" maxlength="300" placeholder="e.g. Europe, MENA, worldwide"></div><div><label>Campaign objective</label><select name="campaign_objective"><option value="brand_awareness">Brand awareness</option><option value="traffic">Website traffic</option><option value="leads">Lead generation</option><option value="registrations">Registrations / sign-ups</option><option value="sales">Conversions / sales</option></select></div></div>
+<div class="row"><div><label>Indicative budget (optional)</label><select name="budget"><option value="">Prefer to discuss</option><option>Under $500</option><option>$500–$1,500</option><option>$1,500–$5,000</option><option>$5,000+</option></select></div><div><label>Preferred campaign timing</label><input name="campaign_timing" maxlength="100" placeholder="e.g. December 2026 / flexible"></div></div>
 <label>Tell us about your campaign</label><textarea name="message" minlength="10" maxlength="2000" required placeholder="Product, target audience, countries, expected timing and any official campaign links…"></textarea>
 <div class="trap" aria-hidden="true"><label>Fax</label><input name="company_fax" tabindex="-1" autocomplete="off"></div>
 <button type="submit">Send partnership inquiry ↗</button>
@@ -41,6 +43,8 @@ const form=document.getElementById("leadForm"),result=document.getElementById("r
 form.addEventListener("submit",async event=>{
  event.preventDefault();const button=form.querySelector("button");button.disabled=true;button.textContent="Sending…";
  const body=Object.fromEntries(new FormData(form).entries());body.source_page="/advertise.html";body.website_url=body.website_url||null;
+ const brief=[["Target markets",body.target_markets],["Campaign objective",body.campaign_objective],["Indicative budget",body.budget],["Preferred timing",body.campaign_timing]].filter(([,v])=>v).map(([k,v])=>k+": "+v).join("\\n");
+ body.message=(brief?brief+"\\n\\n":"")+body.message;
  try{const response=await fetch("/api/advertiser-leads",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not send inquiry");result.textContent=data.message||"Inquiry received. Thank you.";form.reset();}
  catch(error){result.textContent=error.message;}
  finally{button.disabled=false;button.textContent="Send partnership inquiry ↗";}
