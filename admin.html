@@ -383,7 +383,23 @@ async function loadPropFirmPrograms(){
  const host=$("propFirmProgramList");host.textContent="Loading…";
  try{const result=await api("/api/admin/prop-firm-programs");host.textContent="";
   if(!result.data.length){host.textContent="No prop firm programmes yet.";return;}
-  for(const p of result.data){const row=document.createElement("div");row.style.cssText="padding:9px 0;border-bottom:1px solid #263752";const title=document.createElement("strong");title.textContent=p.firm_name+" · "+p.program_name;const meta=document.createElement("p");meta.className="note";meta.textContent=p.funding_model+" · "+p.status+" · "+(p.verified_at?"verified "+new Date(p.verified_at).toLocaleDateString():"not verified");row.append(title,meta);host.append(row);}
+  for(const p of result.data){
+   const row=document.createElement("div");row.style.cssText="padding:10px 0;border-bottom:1px solid #263752";
+   const title=document.createElement("strong");title.textContent=p.firm_name+" · "+p.program_name;
+   const meta=document.createElement("p");meta.className="note";meta.textContent=p.funding_model+" · "+p.status+" · "+(p.verified_at?"verified "+new Date(p.verified_at).toLocaleDateString():"not verified");
+   row.append(title,meta);
+   const source=document.createElement("a");source.href=p.rules_url;source.target="_blank";source.rel="noopener noreferrer";source.textContent="Official rules ↗";source.style.color="#50e5d0";row.append(source);
+   const source2=document.createElement("a");source2.href=p.source_url;source2.target="_blank";source2.rel="noopener noreferrer";source2.textContent=" · Verification source ↗";source2.style.color="#50e5d0";row.append(source2);
+   const next=p.status==="verified"?"suspended":p.status==="suspended"?"draft":"verified";
+   const action=document.createElement("button");action.textContent=next==="verified"?"Verify & publish":next==="suspended"?"Suspend":"Return to draft";action.style.marginLeft="10px";
+   action.addEventListener("click",async()=>{
+    const prompt=next==="verified"?"Confirm you checked the firm's official rules, challenge fees, drawdown, payout and restrictions?":next==="suspended"?"Suspend this programme from public listings?":"Return this programme to draft status?";
+    if(!confirm(prompt))return;
+    try{await api("/api/admin/prop-firm-programs/"+p.id+"/status",{method:"PATCH",body:JSON.stringify({status:next})});await loadPropFirmPrograms();}
+    catch(e){host.textContent=e.message;}
+   });
+   row.append(action);host.append(row);
+  }
  }catch(e){host.textContent=e.message;}
 }
 $("platform").addEventListener("submit", async (event) => {
