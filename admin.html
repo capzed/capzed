@@ -18,11 +18,21 @@
 <p class="note">Token stays in this tab's memory only. Do not share it or paste it into public files.</p>
 <button id="connect">Connect</button><div id="connection" class="status">Not connected</div>
 </section>
+<section class="panel hidden" id="platforms">
+<h2>Register a platform</h2>
+<form id="platform">
+<div class="row"><div><label>Platform name</label><input name="name" required></div><div><label>Slug</label><input name="slug" required></div></div>
+<div class="row"><div><label>Type</label><select name="platform_type"><option>CEX</option><option>DEX</option><option>WALLET</option><option>OTHER</option></select></div><div><label>Website URL (HTTPS)</label><input name="website_url" type="url" required></div></div>
+<label>Logo URL (optional)</label><input name="logo_url" type="url">
+<label>Description</label><textarea name="description"></textarea>
+<button type="submit">Create draft platform</button></form>
+<div id="platformResult" class="status"></div><div id="platformList" class="status">No platforms loaded.</div>
+</section>
 <section class="panel hidden" id="editor">
 <h2>Submit a promotion for review</h2>
 <p class="note">Every submission is created as Pending and remains invisible publicly until verified.</p>
 <form id="promotion">
-<label>Platform ID (UUID)</label><input name="platform_id" required>
+<label>Platform</label><select name="platform_id" id="platformSelect" required><option value="">Load platforms first</option></select>
 <div class="row"><div><label>Slug</label><input name="slug" required></div><div><label>Offer type</label><select name="offer_type"><option value="welcome_bonus">Welcome bonus</option><option value="fee_discount">Fee discount</option><option value="cashback">Cashback</option><option value="airdrop">Airdrop</option><option value="deposit_bonus">Deposit bonus</option><option value="trading_competition">Trading competition</option><option value="other">Other</option></select></div></div>
 <label>Title</label><input name="title" required>
 <label>Short summary</label><textarea name="summary" required></textarea>
@@ -60,8 +70,8 @@ $("connect").addEventListener("click", async () => {
   try {
     await api("/api/health");
     $("connection").textContent = "Connected to API and database.";
-    $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden");
-    await loadQueue();
+    $("platforms").classList.remove("hidden"); $("editor").classList.remove("hidden"); $("queue").classList.remove("hidden");
+    await loadPlatforms(); await loadQueue();
   } catch(e) { token=""; $("connection").textContent = e.message; }
 });
 $("promotion").addEventListener("submit", async (event) => {
@@ -80,4 +90,17 @@ async function loadQueue(){
   } catch(e) { $("items").textContent = e.message; }
 }
 $("refresh").addEventListener("click",loadQueue);
+$("platform").addEventListener("submit", async (event) => {
+  event.preventDefault(); const body=Object.fromEntries(new FormData(event.currentTarget).entries());
+  try { const result=await api("/api/admin/platforms",{method:"POST",body:JSON.stringify(body)});
+    $("platformResult").textContent=JSON.stringify(result,null,2); event.currentTarget.reset(); await loadPlatforms();
+  } catch(e) { $("platformResult").textContent=e.message; }
+});
+async function loadPlatforms(){
+  try {
+    const result=await api("/api/admin/platforms");
+    $("platformSelect").innerHTML='<option value="">Choose a platform</option>'+result.data.map(p=>'<option value="'+p.id+'">'+p.name+' ('+p.platform_type+')</option>').join("");
+    $("platformList").textContent=result.data.length?result.data.map(p=>p.name+" · "+p.platform_type+" · "+p.status+" · "+p.id).join("\\n"):"No platforms yet.";
+  } catch(e) { $("platformList").textContent=e.message; }
+}
 </script></body></html>
