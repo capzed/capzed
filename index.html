@@ -122,7 +122,7 @@ async function loadVerifiedPromotions(){
    const summary=document.createElement('p');summary.textContent=item.summary;
    const bottom=document.createElement('div');bottom.className='deal-bottom';
    const note=document.createElement('small');note.textContent=item.is_sponsored?'Sponsored placement':(item.affiliate_url?'Affiliate link may earn us a commission':'Verified offer');
-   const link=document.createElement('a');link.href=item.affiliate_url||item.landing_url;link.target='_blank';link.rel='sponsored noopener noreferrer';link.textContent='View offer ↗';
+   const link=document.createElement('a');link.href='/api/go/'+encodeURIComponent(item.slug)+'?from=%2F%23deals';link.target='_blank';link.rel='sponsored noopener noreferrer';link.textContent='View offer ↗';
    bottom.append(note,link);card.append(top,title,summary,bottom);host.append(card);
   }
  }catch(_error){}
