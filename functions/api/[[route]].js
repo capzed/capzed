@@ -125,10 +125,9 @@ async function handle(request, env) {
           AND (ends_at IS NULL OR ends_at > now())
         ORDER BY created_at DESC LIMIT 3
       `;
-      if (rows.length) {
-        const ids = rows.map((row) => row.id);
+      for (const row of rows) {
         await sql`UPDATE ad_campaigns SET impressions_count = impressions_count + 1, updated_at = now()
-          WHERE id = ANY(${ids}::uuid[])`;
+          WHERE id = ${row.id}`;
       }
       return json({ data: rows });
     }
