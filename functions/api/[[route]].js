@@ -57,7 +57,9 @@ async function handle(request, env) {
     if (method === "GET" && path === "/api/platforms") {
       const rows = await sql`
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
-               trading_fee_maker, trading_fee_taker
+               trading_fee_maker, trading_fee_taker,
+               (SELECT availability_status FROM platform_region_availability r
+                 WHERE r.platform_id = platforms.id AND r.country_code = 'DZ') AS algeria_status
         FROM platforms WHERE status = 'published'
         ORDER BY name ASC LIMIT 100
       `;
@@ -203,6 +205,43 @@ async function handle(request, env) {
               AND (starts_at IS NULL OR starts_at <= now())
               AND (ends_at IS NULL OR ends_at > now())) AS ads_active,
             (SELECT COALESCE(sum(clicks_count),0)::int FROM ad_campaigns) AS ad_clicks_total
+        `;
+        return json({ data: rows[0] }, 200);
+      }
+
+      if (method === "GET" && path === "/api/admin/regions") {
+        const rows = await sql`
+          SELECT p.id AS platform_id, p.name AS platform_name, p.slug,
+                 r.availability_status, r.evidence_url, r.checked_at, r.notes
+          FROM platforms p LEFT JOIN platform_region_availability r
+            ON r.platform_id = p.id AND r.country_code = 'DZ'
+          ORDER BY p.name ASC LIMIT 200
+        `;
+        return json({ data: rows }, 200);
+      }
+
+      const regionMatch = method === "PATCH" ? path.match(/^\\/api\\/admin\\/platforms\\/([0-9a-f-]{36})\\/region\\/DZ$/i) : null;
+      if (regionMatch) {
+        const body = await request.json();
+        const allowed = ["available", "restricted", "unavailable", "unknown"];
+        if (!allowed.includes(body.availability_status)) return fail("Invalid regional availability status");
+        if (body.availability_status !== "unknown" && !isHttps(body.evidence_url || "")) {
+          return fail("An official HTTPS evidence URL is required for a confirmed regional status");
+        }
+        const exists = await sql`SELECT id FROM platforms WHERE id = ${regionMatch[1]} LIMIT 1`;
+        if (!exists.length) return fail("Platform not found", 404);
+        const rows = await sql`
+          INSERT INTO platform_region_availability
+            (platform_id, country_code, availability_status, evidence_url, checked_at, notes, updated_at)
+          VALUES
+            (${regionMatch[1]}, 'DZ', ${body.availability_status},
+             ${body.availability_status === 'unknown' ? null : body.evidence_url},
+             now(), ${body.notes || null}, now())
+          ON CONFLICT (platform_id, country_code) DO UPDATE SET
+            availability_status = EXCLUDED.availability_status,
+            evidence_url = EXCLUDED.evidence_url,
+            checked_at = now(), notes = EXCLUDED.notes, updated_at = now()
+          RETURNING platform_id, country_code, availability_status, evidence_url, checked_at, notes
         `;
         return json({ data: rows[0] }, 200);
       }
