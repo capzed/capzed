@@ -77,7 +77,7 @@ async function refreshRssNews(sql) {
         if (article.protocol !== "https:" || !(article.hostname === source.domain || article.hostname.endsWith("." + source.domain))) continue;
         await sql`
           INSERT INTO news (source_id, canonical_url, headline, summary, published_at, status)
-          VALUES (\${source.id}, \${article.href}, \${headline}, \${summary || null}, \${new Date(parsedDate).toISOString()}, 'published')
+          VALUES (${source.id}, ${article.href}, ${headline}, ${summary || null}, ${new Date(parsedDate).toISOString()}, 'published')
           ON CONFLICT (canonical_url) DO UPDATE SET
             source_id = EXCLUDED.source_id, headline = EXCLUDED.headline,
             summary = EXCLUDED.summary, published_at = EXCLUDED.published_at,
@@ -87,7 +87,7 @@ async function refreshRssNews(sql) {
     } catch (error) {
       // A failed publisher feed must not break the public news page.
     } finally {
-      await sql`UPDATE news_sources SET last_fetched_at = now() WHERE id = \${source.id}`;
+      await sql`UPDATE news_sources SET last_fetched_at = now() WHERE id = ${source.id}`;
     }
   }));
 }
