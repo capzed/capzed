@@ -4,7 +4,7 @@ import { Script } from "node:vm";
 async function checkInlineScripts() {
   for (const file of ["index.html", "admin.html"]) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
-    const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+    const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
       new Script(scripts[i][1], { filename: file + ":inline-script-" + (i + 1) });
     }
