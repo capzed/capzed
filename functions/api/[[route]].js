@@ -235,6 +235,7 @@ async function handle(request, env) {
         if (body.availability_status !== "unknown" && !isHttps(body.evidence_url || "")) {
           return fail("An official HTTPS evidence URL is required for a confirmed regional status");
         }
+        if (body.evidence_url && !isHttps(body.evidence_url)) return fail("Evidence URL must use HTTPS");
         const exists = await sql`SELECT id FROM platforms WHERE id = ${regionMatch[1]} LIMIT 1`;
         if (!exists.length) return fail("Platform not found", 404);
         const rows = await sql`
@@ -242,7 +243,7 @@ async function handle(request, env) {
             (platform_id, country_code, availability_status, evidence_url, checked_at, notes, updated_at)
           VALUES
             (${regionMatch[1]}, 'DZ', ${body.availability_status},
-             ${body.availability_status === 'unknown' ? null : body.evidence_url},
+             ${body.evidence_url || null},
              now(), ${body.notes || null}, now())
           ON CONFLICT (platform_id, country_code) DO UPDATE SET
             availability_status = EXCLUDED.availability_status,
