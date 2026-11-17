@@ -32,6 +32,66 @@ function authorized(request, env) {
   return difference === 0;
 }
 
+
+function decodeFeedText(value = "") {
+  return value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"').replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/\s+/g, " ").trim();
+}
+
+function feedTag(xml, tag) {
+  const match = xml.match(new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + tag + ">", "i"));
+  return match ? decodeFeedText(match[1]) : "";
+}
+
+async function refreshRssNews(sql) {
+  const due = await sql\`
+    SELECT id, name, domain, feed_url FROM news_sources
+    WHERE is_enabled = true AND source_type = 'rss' AND feed_url IS NOT NULL
+      AND (last_fetched_at IS NULL OR last_fetched_at < now() - interval '20 minutes')
+    ORDER BY name LIMIT 4
+  \`;
+  await Promise.all(due.map(async (source) => {
+    try {
+      const response = await fetch(source.feed_url, {
+        headers: { "accept": "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.5", "user-agent": "AUTOMATET-NewsBot/1.0 (+https://automatet.com)" },
+        signal: AbortSignal.timeout(7000)
+      });
+      if (!response.ok) throw new Error("RSS response " + response.status);
+      const xml = await response.text();
+      const items = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0, 12);
+      for (const match of items) {
+        const item = match[1];
+        const headline = feedTag(item, "title").slice(0, 300);
+        const articleUrl = feedTag(item, "link");
+        const summary = feedTag(item, "description").slice(0, 360);
+        const rawDate = feedTag(item, "pubDate") || feedTag(item, "dc:date");
+        const parsedDate = rawDate ? Date.parse(rawDate) : Date.now();
+        if (!headline || !articleUrl || !Number.isFinite(parsedDate) || Date.now() - parsedDate > 14 * 86400000) continue;
+        let article;
+        try { article = new URL(articleUrl); } catch { continue; }
+        if (article.protocol !== "https:" || !(article.hostname === source.domain || article.hostname.endsWith("." + source.domain))) continue;
+        await sql\`
+          INSERT INTO news (source_id, canonical_url, headline, summary, published_at, status)
+          VALUES (\${source.id}, \${article.href}, \${headline}, \${summary || null}, \${new Date(parsedDate).toISOString()}, 'published')
+          ON CONFLICT (canonical_url) DO UPDATE SET
+            source_id = EXCLUDED.source_id, headline = EXCLUDED.headline,
+            summary = EXCLUDED.summary, published_at = EXCLUDED.published_at,
+            status = 'published'
+        \`;
+      }
+    } catch (error) {
+      // A failed publisher feed must not break the public news page.
+    } finally {
+      await sql\`UPDATE news_sources SET last_fetched_at = now() WHERE id = \${source.id}\`;
+    }
+  }));
+}
+
 async function handle(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -222,6 +282,7 @@ async function handle(request, env) {
     }
 
     if (method === "GET" && path === "/api/news") {
+      await refreshRssNews(sql);
       const rows = await sql`
         SELECT n.id, n.headline, n.summary, n.canonical_url, n.image_url,
                n.published_at, s.name AS publisher, s.domain AS publisher_domain
@@ -229,7 +290,7 @@ async function handle(request, env) {
         WHERE n.status = 'published'
         ORDER BY n.published_at DESC NULLS LAST LIMIT 30
       `;
-      return json({ data: rows });
+      return json({ data: rows, refreshed_at: new Date().toISOString() });
     }
 
     if (path.startsWith("/api/admin/")) {
