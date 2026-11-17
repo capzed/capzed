@@ -20,8 +20,11 @@ Important: do not change DNS records or the current production Pages project unt
 - Responsive futuristic landing page
 - CEX and DEX discovery cards with category filters
 - Comparison overview
-- Latest News section reserved for attributed headlines
-- Advertising and sponsored-placement slots
+- Latest News section connected to the sourced-news API (honest placeholder until data exists)
+- Verified promotions feed; unverified bonuses and codes are not shown
+- Private editorial console at `/admin.html` for platforms, promotions, promo-code checks and sourced headlines
+- Advertising and clearly labelled sponsored-placement slots
+- Draft privacy, terms and partnership pages
 - Telegram: https://t.me/automatetrades
 - X: https://x.com/automatetdotcom
 - No paid runtime dependencies; static hosting only
@@ -35,3 +38,14 @@ Important: do not change DNS records or the current production Pages project unt
 - Replace the reserved ad slots with approved ad-network or direct-partner placements only after account approval.
 
 Do not publish invented bonus amounts, promo codes, or unsourced news. Label sponsored placements clearly.
+
+
+## Backend architecture
+
+- Cloudflare Pages serves the static website and Pages Functions API.
+- Neon PostgreSQL stores platform, promotion, promo-code, news, partner, ad campaign and audit data.
+- Public API routes: `/api/health`, `/api/platforms`, `/api/promotions`, `/api/news`.
+- Admin API uses the server-side `ADMIN_API_TOKEN` secret. Never expose it in client code or commit it.
+- Apply `database/schema.sql` before configuring the API secrets. See `DEPLOYMENT.md`.
+
+The project is not deployed to the production domain. The existing AUTOMATET Education site must remain untouched until the new Pages deployment is tested and a rollback is ready.
