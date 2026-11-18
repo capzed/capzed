@@ -49,3 +49,22 @@ Do not publish invented bonus amounts, promo codes, or unsourced news. Label spo
 - Apply `database/schema.sql` before configuring the API secrets. See `DEPLOYMENT.md`.
 
 The project is not deployed to the production domain. The existing AUTOMATET Education site must remain untouched until the new Pages deployment is tested and a rollback is ready.
+
+
+## Automatic promotion discovery (new)
+
+- Scheduled GitHub Action checks configured official announcement RSS feeds every 20 minutes.
+- New offer-like announcements are inserted into Neon as **pending** promotions, never published automatically.
+- Every candidate keeps the original official article URL as source, terms and landing URL.
+- The editorial console remains the approval gate; expired offers are already excluded by the public promotions API.
+- The first configured feed is Binance's official blog RSS. Add further feeds only after confirming the publisher owns the domain and permits automated access.
+
+### Enable the discovery worker
+
+1. Apply `migrations/0005_automatic_promotion_discovery.sql` to the same Neon database used by the isolated AUTOMATET Crypto Deals Pages project.
+2. Add GitHub Actions secret `DATABASE_URL` to repository `capzed/capzed` (use the Neon pooled connection string; never commit it).
+3. Ensure the `platforms` table contains a published or draft platform with slug `binance`.
+4. Open Actions → AUTOMATET promotion discovery → Run workflow once to test. The scheduled run then repeats every 20 minutes.
+5. Review candidates in the Editorial console and verify the exact campaign terms, eligibility, dates and destination before publishing.
+
+This worker only discovers candidates. It does not claim a reward amount, infer eligibility, bypass bot protections, or publish unverified promotions.
