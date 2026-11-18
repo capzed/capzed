@@ -47,3 +47,8 @@ After the first deployment, add these encrypted variables/secrets in Cloudflare 
 - `ADMIN_API_TOKEN`: a long random secret used only by the editorial console.
 
 Never paste credentials into chat or commit them to GitHub. Keep `automatet.com` untouched until the isolated preview, database API and admin workflow have all been tested.
+
+
+## Automatic promotion discovery
+
+Apply `migrations/0005_automatic_promotion_discovery.sql` to the Neon database before enabling the scheduled worker. Configure the GitHub Actions secret `DATABASE_URL` with that same database's pooled connection string. The worker runs every 20 minutes, reads enabled official RSS sources from `promotion_sources`, and inserts matching announcements as pending records. It never publishes automatically. Review every candidate in the editorial console before changing its status to verified. The initial source is Binance's official blog RSS; add other feeds only after confirming their official ownership and access rules.
