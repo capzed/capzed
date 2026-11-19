@@ -73,7 +73,7 @@ function brandLogo(name,logoUrl,websiteUrl,className='brandlogo'){
  const candidates=[];
  if(logoUrl&&/^https:\/\//i.test(logoUrl))candidates.push(logoUrl);
  if(host){candidates.push('https://icons.duckduckgo.com/ip3/'+host+'.ico','https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=128','https://icon.horse/icon/'+host);}
- if(candidates.length){const img=document.createElement('img');img.alt=(name||'Brand')+' logo';img.loading='lazy';img.referrerPolicy='no-referrer';let index=0;img.onerror=()=>{index++;if(index<candidates.length)img.src=candidates[index];else{img.remove();fallback.style.display='grid';}};fallback.style.display='none';img.src=candidates[0];wrap.append(img);}
+ if(candidates.length){const img=document.createElement('img');img.alt=(name||'Brand')+' logo';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';let index=0;img.onload=()=>{fallback.style.display='none';};img.onerror=()=>{index++;if(index<candidates.length)img.src=candidates[index];else{img.remove();fallback.style.display='grid';}};img.src=candidates[0];wrap.append(img);}
  return wrap;
 }
 function renderPlatforms(){
@@ -131,8 +131,17 @@ async function loadPlatforms(){
   setTimeout(loadPlatforms,30000);
  }
 }
-const NEWS_VISUALS=[{keys:['bitcoin','btc','price','market','trading','etf'],url:'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1000&q=82'},{keys:['ethereum','blockchain','defi','token','crypto','web3'],url:'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=82'},{keys:['regulation','law','policy','security','hack','exchange'],url:'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?auto=format&fit=crop&w=1000&q=82'}];
-function newsPhoto(item){if(item.image_url&&item.image_url.startsWith('https://'))return item.image_url;const text=((item.headline||'')+' '+(item.summary||'')).toLowerCase();const match=NEWS_VISUALS.find(x=>x.keys.some(k=>text.includes(k)));return (match||NEWS_VISUALS[1]).url;}
+const NEWS_VISUALS=[
+ {keys:['bitcoin','btc','price','market','trading','etf'],label:'MARKETS',urls:['https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1000&q=82','https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=1000&q=82']},
+ {keys:['ethereum','blockchain','defi','token','crypto','web3'],label:'BLOCKCHAIN',urls:['https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1000&q=82','https://images.unsplash.com/photo-1621761191319-c6fb62004040?auto=format&fit=crop&w=1000&q=82']},
+ {keys:['regulation','law','policy','security','hack','exchange'],label:'SECURITY',urls:['https://images.unsplash.com/photo-1640340434855-6084b1f4901c?auto=format&fit=crop&w=1000&q=82','https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1000&q=82']}
+];
+function newsPhotoCandidates(item){
+ const text=((item.headline||'')+' '+(item.summary||'')).toLowerCase();
+ const match=NEWS_VISUALS.find(x=>x.keys.some(k=>text.includes(k)))||NEWS_VISUALS[1];
+ const provided=typeof item.image_url==='string'&&/^https:\/\//i.test(item.image_url)?item.image_url:null;
+ return [...new Set([provided,...match.urls,...NEWS_VISUALS.flatMap(x=>x.urls)].filter(Boolean))];
+}
 async function loadLatestNews(){
  const host=document.getElementById('newsgrid'); if(!host)return;
  try{
@@ -145,7 +154,7 @@ async function loadLatestNews(){
   for(const item of payload.data.slice(0,3)){
    const card=document.createElement('article');card.className='news';
    const visual=document.createElement('div');visual.className='newsvisual';
-   const photo=document.createElement('img');photo.className='news-photo';photo.alt='';photo.loading='lazy';photo.referrerPolicy='no-referrer';photo.src=newsPhoto(item);photo.onerror=()=>{photo.remove();visual.classList.add('newsvisual-fallback');};visual.append(photo);
+   const photo=document.createElement('img');photo.className='news-photo';photo.alt='';photo.loading='lazy';photo.decoding='async';photo.referrerPolicy='no-referrer';const photoSources=newsPhotoCandidates(item);let photoIndex=0;photo.onerror=()=>{photoIndex++;if(photoIndex<photoSources.length){photo.src=photoSources[photoIndex];}else{photo.remove();visual.classList.add('newsvisual-fallback');}};photo.src=photoSources[0];visual.append(photo);
    const logo=brandLogo(item.publisher,item.publisher_domain?'https://'+item.publisher_domain:null,null,'newsbrand');
    const chip=document.createElement('span');chip.className='publisher-chip';chip.textContent=item.publisher||'CRYPTO NEWS';
    visual.append(logo,chip);
