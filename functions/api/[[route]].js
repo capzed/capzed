@@ -117,6 +117,7 @@ async function handle(request, env) {
     if (method === "GET" && path === "/api/platforms") {
       const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
       const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && !["T1", "XX"].includes(visitorCountryCode) ? visitorCountryCode : null;
+      try {
       const rows = await sql`
         SELECT id, slug, name, platform_type, website_url, logo_url, description,
                (SELECT maker_rate FROM platform_fee_sources fs WHERE fs.platform_id = platforms.id AND fs.product_scope = 'spot' AND fs.fee_tier = 'regular' AND fs.is_current = true ORDER BY fs.checked_at DESC LIMIT 1) AS trading_fee_maker,
@@ -133,6 +134,26 @@ async function handle(request, env) {
         ORDER BY name ASC LIMIT 100
       `;
       return json({ data: rows.map(row => ({ ...row, visitor_country_code: countryCode })) }, 200, "private, no-store");
+      } catch (error) {
+        console.error("AUTOMATET platform directory fallback:", error?.message || "unknown");
+        const fallback = [
+          ["binance","Binance","CEX","https://www.binance.com"],
+          ["coinbase","Coinbase","CEX","https://www.coinbase.com"],
+          ["kraken","Kraken","CEX","https://www.kraken.com"],
+          ["okx","OKX","CEX","https://www.okx.com"],
+          ["bybit","Bybit","CEX","https://www.bybit.com"],
+          ["bitget","Bitget","CEX","https://www.bitget.com"],
+          ["kucoin","KuCoin","CEX","https://www.kucoin.com"],
+          ["gate","Gate","CEX","https://www.gate.com"]
+        ].map(([slug,name,platform_type,website_url]) => ({
+          slug,name,platform_type,website_url,logo_url:null,
+          description:"Official website directory preview. Fees, products and regional availability have not been independently verified.",
+          trading_fee_maker:null,trading_fee_taker:null,fee_product_scope:null,fee_tier:null,
+          fee_source_url:null,fee_checked_at:null,regional_availability:[],
+          visitor_country_code:countryCode,directory_preview:true
+        }));
+        return json({ data:fallback, preview:true },200,"private, no-store");
+      }
     }
 
     const platformDetailMatch = method === "GET" ? path.match(/^\/api\/platforms\/([a-z0-9-]+)$/i) : null;
