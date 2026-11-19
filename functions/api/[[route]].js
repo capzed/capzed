@@ -133,6 +133,7 @@ async function handle(request, env) {
         FROM platforms WHERE status = 'published'
         ORDER BY name ASC LIMIT 100
       `;
+      if (!rows.length) throw new Error("No published platform profiles yet; use the clearly labelled directory preview.");
       return json({ data: rows.map(row => ({ ...row, visitor_country_code: countryCode })) }, 200, "private, no-store");
       } catch (error) {
         console.error("AUTOMATET platform directory fallback:", error?.message || "unknown");
