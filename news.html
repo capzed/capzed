@@ -30,7 +30,7 @@ header{position:sticky;top:0;z-index:5;background:#080d19ed;backdrop-filter:blur
 <footer><div class="wrap footrow"><span>© 2026 AUTOMATET · Independent crypto discovery platform</span><span><a href="/methodology.html">How we verify</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></span></div></footer>
 <script>
 const grid=document.getElementById('newsGrid'),filters=document.getElementById('filters'),count=document.getElementById('count'),statusLine=document.getElementById('feedStatus');
-let stories=[],activeSource='all';
+let stories=[],activeSource='all',filtersBound=false;
 function safeDate(value){const d=new Date(value);return Number.isNaN(d.getTime())?'Recent update':d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC'}
 function makePublisherLogo(name,domain){
  const wrap=document.createElement('span');wrap.className='publisher-logo';
@@ -66,7 +66,7 @@ function makeFilters(){
  filters.textContent='';
  const all=document.createElement('button');all.className='filter active';all.dataset.source='all';all.textContent='All stories';filters.append(all);
  for(const source of sources){const b=document.createElement('button');b.className='filter';b.dataset.source=source;b.textContent=source;filters.append(b)}
- filters.addEventListener('click',event=>{const b=event.target.closest('button[data-source]');if(!b)return;activeSource=b.dataset.source;for(const el of filters.querySelectorAll('.filter'))el.classList.toggle('active',el===b);render()});
+ if(!filtersBound){filters.addEventListener('click',event=>{const b=event.target.closest('button[data-source]');if(!b)return;activeSource=b.dataset.source;for(const el of filters.querySelectorAll('.filter'))el.classList.toggle('active',el===b);render()});filtersBound=true;}
 }
 async function load(){
  try{
@@ -78,5 +78,7 @@ async function load(){
  }catch(error){grid.innerHTML='<div class="error">The news desk is temporarily unavailable. Please refresh the page shortly.</div>';count.textContent='Feed unavailable';statusLine.textContent='Unable to connect to the news feed.'}
 }
 load();
+// Recheck the feed periodically; eligible RSS sources refresh on the server.
+setInterval(load,10*60*1000);
 </script>
 </body></html>
