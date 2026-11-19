@@ -161,6 +161,10 @@ async function handle(request, env) {
       const slug = platformDetailMatch[1];
       const visitorCountryCode = String(request.cf?.country || "").toUpperCase();
       const countryCode = /^[A-Z]{2}$/.test(visitorCountryCode) && !["T1", "XX"].includes(visitorCountryCode) ? visitorCountryCode : null;
+      const exists = await sql`
+        SELECT id FROM platforms WHERE slug = ${slug} AND status = 'published' LIMIT 1
+      `;
+      if (!exists.length) return fail("Platform not found", 404);
       const rows = await sql`
         SELECT p.id, p.slug, p.name, p.platform_type, p.website_url, p.logo_url,
                p.description,
