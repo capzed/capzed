@@ -24,6 +24,41 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Report dependency security audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          audit_status=0
+          npm audit --json > "$RUNNER_TEMP/npm-audit.json" || audit_status=$?
+          echo "npm audit exit status: $audit_status"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = process.env.RUNNER_TEMP + '/npm-audit.json';
+          let report;
+          try {
+            report = JSON.parse(fs.readFileSync(path, 'utf8'));
+          } catch {
+            console.log('AUDIT_REPORT_UNAVAILABLE: npm did not return valid JSON.');
+            process.exit(0);
+          }
+          const counts = report.metadata?.vulnerabilities;
+          if (counts) {
+            console.log('VULNERABILITY_COUNTS ' + JSON.stringify(counts));
+          }
+          const entries = Object.entries(report.vulnerabilities ?? {});
+          if (!entries.length) {
+            console.log('NO_DEPENDENCY_VULNERABILITIES_REPORTED');
+          }
+          for (const [name, item] of entries) {
+            console.log('PACKAGE ' + JSON.stringify({
+              name,
+              severity: item.severity,
+              direct: item.isDirect,
+              range: item.range,
+              fixAvailable: item.fixAvailable ?? false
+            }));
+          }
+          NODE
       - name: Validate API and smoke-test syntax
         run: npm run check
       - name: Install Wrangler
