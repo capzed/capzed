@@ -12,9 +12,22 @@ const $=id=>document.getElementById(id);
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fee=v=>v===null||v===undefined?"Not yet verified":safe(v)+"%";
 const countryName=code=>{try{return code?new Intl.DisplayNames([navigator.language||"en"],{type:"region"}).of(code):"";}catch{return code||"";}};
+const DIRECTORY_PREVIEW=[
+ {slug:"binance",name:"Binance",platform_type:"CEX",website_url:"https://www.binance.com"},
+ {slug:"coinbase",name:"Coinbase",platform_type:"CEX",website_url:"https://www.coinbase.com"},
+ {slug:"kraken",name:"Kraken",platform_type:"CEX",website_url:"https://www.kraken.com"},
+ {slug:"okx",name:"OKX",platform_type:"CEX",website_url:"https://www.okx.com"},
+ {slug:"bybit",name:"Bybit",platform_type:"CEX",website_url:"https://www.bybit.com"},
+ {slug:"bitget",name:"Bitget",platform_type:"CEX",website_url:"https://www.bitget.com"},
+ {slug:"kucoin",name:"KuCoin",platform_type:"CEX",website_url:"https://www.kucoin.com"},
+ {slug:"gate",name:"Gate",platform_type:"CEX",website_url:"https://www.gate.com"}
+];
 async function init(){
- const r=await fetch("/api/platforms");const b=await r.json();if(!r.ok)throw new Error("Platform list unavailable");platforms=b.data||[];
- for(const id of ["p1","p2","p3"]){for(const p of platforms){const o=document.createElement("option");o.value=p.slug;o.textContent=p.name;$(id).append(o);}}
+ try{const r=await fetch("/api/platforms");const b=await r.json();if(!r.ok||!Array.isArray(b.data))throw new Error("Platform list unavailable");platforms=b.data;}
+ catch{platforms=[];}
+ if(!platforms.length)platforms=DIRECTORY_PREVIEW.map(p=>({...p,directory_preview:true,regional_availability:[],visitor_country_code:null}));
+ for(const id of ["p1","p2","p3"]){for(const p of platforms){const o=document.createElement("option");o.value=p.slug;o.textContent=p.name+(p.directory_preview?" · preview":"");$(id).append(o);}}
+ if(platforms.some(p=>p.directory_preview))$("result").textContent="Directory preview: official websites only. Fees and regional availability are not verified yet.";
 }
 $("compare").addEventListener("click",()=>{
  const selected=["p1","p2","p3"].map(id=>platforms.find(p=>p.slug===$(id).value)).filter(Boolean);
@@ -28,7 +41,7 @@ $("compare").addEventListener("click",()=>{
   ["Taker fee",p=>fee(p.trading_fee_taker)],
   ["Regional availability",p=>{const country=countryName(p.visitor_country_code);const records=Array.isArray(p.regional_availability)?p.regional_availability:[];if(!country)return "Not displayed — country not determined for this visit";if(!records.length)return "Not verified for "+safe(country);const r=records[0];return safe(country)+": "+safe(({available:"Confirmed available",restricted:"Restrictions reported",unavailable:"Confirmed unavailable",unknown:"Not yet verified"}[r.status]||"Not yet verified"));}],
   ["Official website",p=>'<a href="'+safe(p.website_url)+'" target="_blank" rel="noopener noreferrer">Visit official site ↗</a>'],
-  ["Profile",p=>'<a href="/platform.html?slug='+encodeURIComponent(p.slug)+'">View details ↗</a>']
+  
  ];
  host.className="tablewrap";
  host.innerHTML='<table><thead><tr><th>Criteria</th>'+columns+'</tr></thead><tbody>'+rows.map(([label,fn])=>'<tr><td>'+label+'</td>'+unique.map(p=>'<td>'+fn(p)+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
