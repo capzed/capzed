@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Install dependencies
         run: npm install
       - name: Report dependency security audit
@@ -61,21 +61,21 @@ jobs:
           NODE
       - name: Validate API and smoke-test syntax
         run: npm run check
-      - name: Install Wrangler
-        run: npm install --global wrangler
+      - name: Verify local Wrangler version
+        run: npx wrangler --version
       - name: Create Pages project if needed
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if ! wrangler pages project list | grep -q "automatet-crypto-deals"; then
-            wrangler pages project create automatet-crypto-deals --production-branch main
+          if ! npx wrangler pages project list | grep -q "automatet-crypto-deals"; then
+            npx wrangler pages project create automatet-crypto-deals --production-branch main
           fi
       - name: Deploy production branch to isolated Pages project
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: wrangler pages deploy . --project-name automatet-crypto-deals --branch main --commit-dirty=true
+        run: npx wrangler pages deploy . --project-name automatet-crypto-deals --branch main --commit-dirty=true
       - name: Read-only preflight for automatet.com domain migration
         if: success()
         continue-on-error: true
