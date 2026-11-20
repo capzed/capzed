@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
-Sitemap: https://automatet-crypto-deals.pages.dev/sitemap.xml
+Sitemap: https://automatet.com/sitemap.xml
