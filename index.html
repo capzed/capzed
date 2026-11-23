@@ -263,30 +263,8 @@ async function loadVerifiedPromotions(){
   const empty=document.createElement('p');empty.className='catalogue-note';empty.textContent='Promotions are temporarily unavailable. Please try again shortly.';host.replaceChildren(empty);
  }
 }
-async function loadAdPlacement(placement){
- const host=document.getElementById(placement==="top"?"ad-top":"ad-inline");if(!host)return;
- try{
-  const response=await fetch("/api/ads?placement="+encodeURIComponent(placement),{headers:{accept:"application/json"}});
-  if(!response.ok)return;
-  const payload=await response.json();if(!Array.isArray(payload.data)||!payload.data.length)return;
-  const item=payload.data[0];host.textContent="";host.classList.add("sponsored-ad");
-  host.style.cssText="min-height:88px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;border-style:solid;text-align:left";
-  const copy=document.createElement("div");copy.style.cssText="display:flex;flex-direction:column;gap:3px;min-width:0";
-  const label=document.createElement("small");label.textContent=item.sponsor_label||"Sponsored";label.style.cssText="color:#50e5d0;font-weight:900;letter-spacing:1px;text-transform:uppercase";
-  const name=document.createElement("strong");name.textContent=item.name;name.style.cssText="font-size:15px;color:#f2f6ff";
-  const disclosure=document.createElement("small");disclosure.textContent="Paid partner placement";disclosure.style.color="#9aaac2";
-  copy.append(label,name,disclosure);host.append(copy);
-  if(item.creative_url){
-   const image=document.createElement("img");image.src=item.creative_url;image.alt=item.name;image.loading="lazy";
-   image.style.cssText="max-width:110px;max-height:58px;object-fit:contain;border-radius:8px";host.append(image);
-  }
-  const link=document.createElement("a");link.href="/api/ad-go/"+encodeURIComponent(item.id);link.textContent="Discover ↗";
-  link.style.cssText="white-space:nowrap;color:#07131b;background:linear-gradient(110deg,#50e5d0,#9cf0d7);padding:10px 14px;border-radius:9px;font-size:12px;font-weight:900";
-  link.rel="sponsored noopener noreferrer";host.append(link);
- }catch(_error){}
-}
-loadPlatforms();loadLatestNews();loadVerifiedPromotions();loadAdPlacement('top');loadAdPlacement('inline');
+loadPlatforms();loadLatestNews();loadVerifiedPromotions();
 // Refresh public data periodically; editorial verification and expiry checks remain server-side.
-setInterval(()=>{loadPlatforms();loadLatestNews();loadVerifiedPromotions();loadAdPlacement('top');loadAdPlacement('inline');},5*60*1000);
+setInterval(()=>{loadPlatforms();loadLatestNews();loadVerifiedPromotions();},5*60*1000);
 </script>
 </body></html>
