@@ -15,11 +15,11 @@ header{position:sticky;top:0;z-index:10;background:#080d19eF;backdrop-filter:blu
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 55px}.stat{border:1px solid var(--line);background:#ffffff04;padding:15px 18px;border-radius:14px}.stat b{display:block;font-size:13px}.stat span{color:var(--muted);font-size:11px}.stat-link{display:block;color:inherit;text-decoration:none;transition:border-color .18s,background .18s,transform .18s}.stat-link:hover,.stat-link:focus-visible{border-color:#50e5d088;background:#50e5d00b;transform:translateY(-2px);outline:none}.stat-link b{display:flex;align-items:center;justify-content:space-between}.stat-arrow{color:var(--cyan);font-size:16px}
 section{padding:30px 0 45px}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:20px}.kicker{color:var(--cyan);font-size:10px;letter-spacing:1.8px;font-weight:900;text-transform:uppercase}.sectionhead h2{font-size:28px;letter-spacing:-.8px;margin:5px 0 0}.sectionhead p{color:var(--muted);font-size:13px;margin:5px 0 0}.textlink{color:var(--cyan);font-size:12px;font-weight:800}
 .adslot{border:1px dashed #50617b;border-radius:14px;min-height:76px;display:flex;align-items:center;justify-content:center;text-align:center;color:#8192aa;font-size:11px;letter-spacing:1.1px;background:linear-gradient(90deg,#ffffff03,transparent,#ffffff03);margin:12px 0 32px}
-.adslot-sponsored{display:block;min-height:0;padding:14px;border:1px solid #1e6ba1;background:radial-gradient(ellipse at 50% 0%,#0b477533,transparent 65%),#07101d;overflow:hidden}
-.sponsor-label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 14px;color:#7bdfff;font-size:10px;font-weight:900;letter-spacing:1.6px;text-align:left}
-.sponsor-label span:last-child{color:#9aabc2;font-weight:700;letter-spacing:1px}
+.adslot-sponsored{display:block;min-height:0;padding:16px;border:2px solid #1679d0;border-radius:18px;background:radial-gradient(ellipse at 50% 0%,#0b477544,transparent 65%),#050d1b;overflow:hidden;box-shadow:0 12px 34px #007dff20}
+.sponsor-label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 14px;color:#7bdfff;font-size:11px;font-weight:950;letter-spacing:1.5px;text-align:left}
+.sponsor-label span:last-child{color:#a9c8e8;font-weight:800;letter-spacing:1px}
 .merlijn-results{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid #168bff;border-radius:12px;background:#031020;color:#f5f8ff;font-size:clamp(12px,1.6vw,16px)}
-.merlijn-results caption{padding:12px 8px 15px;color:#dceaff;font-size:clamp(18px,3vw,28px);font-weight:950;letter-spacing:1px;text-align:center}
+.merlijn-results caption{padding:12px 8px 15px;color:#fff;font-size:clamp(21px,3vw,30px);font-weight:950;letter-spacing:1px;text-align:center}
 .merlijn-results caption strong{display:block;color:#168ff0;font-size:1.12em}
 .merlijn-results th{padding:10px 8px;background:linear-gradient(100deg,#1456e8,#087fe8);font-weight:900;text-align:center}
 .merlijn-results td{padding:7px 8px;border-top:1px solid #294363;text-align:center}
@@ -27,13 +27,20 @@ section{padding:30px 0 45px}.sectionhead{display:flex;justify-content:space-betw
 .merlijn-results tfoot td{padding:12px 8px;color:#20aaff;font-weight:950;font-size:1.08em;letter-spacing:.4px}
 .merlijn-meta{display:flex;align-items:center;justify-content:center;color:#a9c7e6;font-size:10px;letter-spacing:2px;font-weight:800;padding:12px 4px}
 .sponsor-bottom{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 3px 2px;text-align:left}
-.sponsor-copy strong{display:block;color:#f4f7ff;font-size:15px;line-height:1.3}
-.sponsor-copy small{display:block;color:#9aaac2;font-size:11px;margin-top:4px}
+.sponsor-copy strong{display:block;color:#f4f7ff;font-size:16px;line-height:1.3}
+.sponsor-copy small{display:block;color:#b0c0d6;font-size:12px;margin-top:4px}
 .sponsor-actions{display:flex;gap:9px;flex-wrap:wrap}
-.sponsor-cta{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 18px;border-radius:999px;background:linear-gradient(110deg,#087fe8,#0754bd);color:#fff;font-size:11px;font-weight:900;box-shadow:0 5px 18px #087fe844}
-.sponsor-cta.offer{background:linear-gradient(110deg,#ef243d,#b90e28);box-shadow:0 5px 18px #f326443d}
+.sponsor-cta{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;border-radius:999px;background:linear-gradient(110deg,#087fe8,#0754bd);color:#fff;font-size:12px;font-weight:950;box-shadow:0 5px 18px #087fe866}
+.sponsor-cta.offer{background:linear-gradient(110deg,#ef243d,#b90e28);box-shadow:0 5px 18px #f3264466}
 .sponsor-cta:hover{filter:brightness(1.12);transform:translateY(-1px)}
-@media(max-width:560px){.adslot-sponsored{padding:9px}.sponsor-label{font-size:8px;letter-spacing:1px}.sponsor-bottom{align-items:flex-start;flex-direction:column}.sponsor-actions,.sponsor-cta{width:100%}.sponsor-actions{flex-direction:column}.merlijn-results td{padding:6px 4px}.merlijn-results th{padding:8px 4px}.merlijn-meta{font-size:9px;letter-spacing:1px}}
+.merlijn-offer-card{margin-top:22px;border-color:#e52b48;background:radial-gradient(ellipse at 50% 0%,#e52b4830,transparent 65%),#090a13;box-shadow:0 12px 36px #e52b4825}
+.merlijn-offer-card .offer-art{display:block;width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid #244b79;background:#020713}
+.merlijn-offer-card .offer-heading{margin:0 0 12px;color:#fff;font-size:clamp(20px,3vw,28px);font-weight:950;text-align:center}
+.merlijn-offer-card .offer-heading strong{display:block;color:#ff3b50;font-size:1.25em}
+.merlijn-offer-card .offer-sub{margin:12px 0;color:#c2d1e5;text-align:center;font-weight:800}
+.merlijn-offer-card .offer-cta-wrap{display:flex;justify-content:center;padding-top:4px}
+.merlijn-offer-card .sponsor-cta{min-width:min(100%,280px)}
+@media(max-width:560px){.adslot-sponsored{padding:10px}.sponsor-label{font-size:9px;letter-spacing:1px}.sponsor-bottom{align-items:flex-start;flex-direction:column}.sponsor-actions,.sponsor-cta{width:100%}.sponsor-actions{flex-direction:column}.merlijn-results td{padding:6px 4px}.merlijn-results th{padding:8px 4px}.merlijn-meta{font-size:9px;letter-spacing:1px}.merlijn-offer-card{margin-top:18px}.merlijn-offer-card .offer-cta-wrap{width:100%}}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.filter{background:#ffffff06;color:#b7c5d9;border:1px solid var(--line);padding:8px 13px;border-radius:30px;font-size:11px;cursor:pointer}.filter.active,.filter:hover{background:#50e5d015;border-color:#50e5d088;color:var(--cyan)}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.deal{background:linear-gradient(145deg,#111e31,#0d1625);border:1px solid var(--line);border-radius:17px;padding:18px;transition:.2s}.deal:hover{transform:translateY(-3px);border-color:#50e5d077}.deal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.exchange{display:flex;align-items:center;gap:10px;font-weight:800}.coinlogo{width:35px;height:35px;border-radius:11px;background:#1b2c44;display:grid;place-items:center;color:var(--cyan);font-weight:900}.tag{font-size:9px;color:var(--lime);border:1px solid #c5f36a44;background:#c5f36a0c;padding:5px 8px;border-radius:30px}.deal h3{font-size:17px;margin:0 0 7px}.deal p{color:var(--muted);font-size:12px;margin:0 0 17px;min-height:38px}.deal-bottom{border-top:1px solid var(--line);padding-top:13px;display:flex;justify-content:space-between;align-items:center}.deal-bottom small{font-size:10px;color:var(--muted)}.deal-bottom a{font-size:11px;color:var(--cyan);font-weight:800}
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}.comparebox{border:1px solid var(--line);border-radius:17px;padding:22px;background:linear-gradient(140deg,#14233a,#0d1727)}.comparebox h3{margin:0 0 7px}.comparebox p{color:var(--muted);font-size:12px;margin:0 0 16px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid #ffffff17;background:#ffffff07;padding:7px 10px;border-radius:9px;font-size:11px}
@@ -65,8 +72,8 @@ footer{border-top:1px solid #ffffff14;margin-top:30px;padding:30px 0 38px}.footr
 <div class="hero"><div><div class="eyebrow"><span class="dot"></span> Your crypto advantage starts here</div><h1>Find better crypto deals.<br><span>Trade smarter.</span></h1><p class="lead">Discover exchange promotions, compare CEXs, DEXs and funded-trading prop firms, and keep up with the stories moving crypto.</p><div class="actions"><a class="btn primary" href="#deals">Explore latest deals <span>↗</span></a><a class="btn secondary" href="#compare">Compare platforms</a></div></div>
 <div class="heroart"><div class="orb"></div><div class="hero-orbit"></div><div class="hero-core"><span>A</span></div><div class="hero-scan"></div><div class="hero-console"><small>AUTOMATET INTELLIGENCE</small><strong>Find your next edge.</strong><p>One global cockpit for crypto opportunities, platform data and market intelligence.</p></div><div class="hero-metrics"><span>DEALS</span><span>PLATFORMS</span><span>MARKET PULSE</span></div><div class="chart"><svg viewBox="0 0 600 180" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#50e5d0" stop-opacity=".35"/><stop offset="1" stop-color="#50e5d0" stop-opacity="0"/></linearGradient></defs><path d="M0 145 C40 130 45 145 80 120 S130 130 160 95 S215 120 245 90 S300 105 335 68 S385 85 420 55 S470 75 505 30 S560 45 600 12 L600 180 L0 180Z" fill="url(#area)"/><path d="M0 145 C40 130 45 145 80 120 S130 130 160 95 S215 120 245 90 S300 105 335 68 S385 85 420 55 S470 75 505 30 S560 45 600 12" fill="none" stroke="#50e5d0" stroke-width="3"/></svg></div></div></div>
 <div class="stats"><a class="stat stat-link" href="/compare.html" aria-label="Compare CEX and DEX platforms: features, fees and details"><b>Compare CEX &amp; DEX <span class="stat-arrow">↗</span></b><span>Features, fees and platform details</span></a><a class="stat stat-link" href="#deals" aria-label="Discover verified promotions and partner offers"><b>Discover promotions <span class="stat-arrow">↗</span></b><span>Bonuses, rewards and partner offers</span></a><a class="stat stat-link" href="/news.html" aria-label="Stay ahead with the latest crypto news"><b>Stay ahead <span class="stat-arrow">↗</span></b><span>News and updates in one place</span></a></div>
-<section class="adslot adslot-sponsored" id="ad-top" aria-label="Merlijn The Trader community results and links">
-<div class="sponsor-label"><span>MERLIJN THE TRADER · COMMUNITY RESULTS</span><span>× BITFUNDED</span></div>
+<section class="adslot adslot-sponsored" id="ad-top" aria-label="Merlijn The Trader free group results">
+<div class="sponsor-label"><span>MERLIJN THE TRADER · FREE GROUP RESULTS</span><span>COMMUNITY TRACK RECORD</span></div>
 <table class="merlijn-results" aria-label="Free group trade results from November 8 to November 20">
 <caption>FREE GROUP RESULTS<strong>NOV 8 — NOV 20</strong></caption>
 <thead><tr><th scope="col">DATE</th><th scope="col">TRADE</th><th scope="col">RESULT</th></tr></thead>
@@ -87,11 +94,16 @@ footer{border-top:1px solid #ffffff14;margin-top:30px;padding:30px 0 38px}.footr
 <tfoot><tr><td colspan="3">92% WIN RATE · 11 WINS / 12 TRADES</td></tr></tfoot>
 </table>
 <div class="merlijn-meta">MERLIJN THE TRADER CHANNEL</div>
-<div class="sponsor-bottom"><div class="sponsor-copy"><strong>Join Merlijn’s Telegram community</strong><small>Follow the group for trade ideas, updates and community results.</small></div>
-<div class="sponsor-actions">
-<a class="sponsor-cta" href="https://t.me/merlijnthetrades" target="_blank" rel="noopener">JOIN TELEGRAM GROUP <span aria-hidden="true">→</span></a>
-<a class="sponsor-cta offer" href="https://merlijnxbitfunded.com/" target="_blank" rel="noopener">CHECK THE BITFUNDED OFFER <span aria-hidden="true">→</span></a>
-</div></div>
+<div class="sponsor-bottom"><div class="sponsor-copy"><strong>Join Merlijn’s free Telegram community</strong><small>Get trade ideas, updates and community results directly in Telegram.</small></div>
+<div class="sponsor-actions"><a class="sponsor-cta" href="https://t.me/merlijnthetrades" target="_blank" rel="noopener">JOIN FREE TELEGRAM GROUP <span aria-hidden="true">→</span></a></div></div>
+</section>
+<section class="adslot adslot-sponsored merlijn-offer-card" id="merlijn-bitfunded-offer" aria-label="Merlijn The Trader Black Friday Bitfunded offer">
+<h2 class="offer-heading">BLACK FRIDAY BOOST<strong>70% OFF</strong></h2>
+<a href="https://merlijnxbitfunded.com/" target="_blank" rel="noopener" aria-label="View the Black Friday Bitfunded offer">
+<img class="offer-art" src="/assets/merlijn-black-friday.svg" alt="Black Friday Boost: 70 percent off and 20x leverage on all challenges" loading="lazy">
+</a>
+<p class="offer-sub">+ 20X LEVERAGE ON ALL CHALLENGES</p>
+<div class="offer-cta-wrap"><a class="sponsor-cta offer" href="https://merlijnxbitfunded.com/" target="_blank" rel="noopener">CHECK THE 70% OFF OFFER <span aria-hidden="true">→</span></a></div>
 </section>
 <section id="deals"><div class="sectionhead"><div><div class="kicker">Verified campaigns only</div><h2>Explore crypto deals</h2><p>We publish a promotion only after checking its official terms, dates and eligibility. No invented or expired offers.</p></div><a class="textlink" href="#partners">List your offer ↗</a></div>
 <div class="filters"><button class="filter active" data-filter="all">All offers</button><button class="filter" data-filter="trading_competition">Trading competitions</button><button class="filter" data-filter="welcome_bonus">Welcome bonuses</button><button class="filter" data-filter="fee_discount">Fee discounts</button></div>
