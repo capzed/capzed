@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-labelledby="title desc">
+<title id="title">Black Friday Boost — 70% off</title>
+<desc id="desc">Merlijn The Trader and Bitfunded promotion: 70 percent off and 20 times leverage on all challenges.</desc>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#030812"/><stop offset=".55" stop-color="#071a32"/><stop offset="1" stop-color="#02050c"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26e7ff"/><stop offset=".5" stop-color="#1684ff"/><stop offset="1" stop-color="#083a91"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff747b"/><stop offset=".45" stop-color="#ff263d"/><stop offset="1" stop-color="#a8001d"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="shadow"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="7"/><feComponentTransfer><feFuncA type="linear" slope=".7"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1200" height="430" rx="28" fill="url(#bg)"/>
+<path d="M-40 80 Q350 -90 670 75 T1260 65" fill="none" stroke="#0d8eff" stroke-width="60" opacity=".13" filter="url(#glow)"/>
+<path d="M-30 360 Q420 110 720 280 T1250 220" fill="none" stroke="#16caff" stroke-width="38" opacity=".12" filter="url(#glow)"/>
+<g font-family="Arial,Helvetica,sans-serif">
+ <rect x="48" y="38" width="1104" height="50" rx="25" fill="#071e35" stroke="#168fe7" stroke-width="2"/>
+ <text x="78" y="70" fill="#7ceaff" font-size="22" font-weight="700" letter-spacing="3">⚡ BLACK FRIDAY BOOST · MERLIJN THE TRADER EXCLUSIVE</text>
+ <text x="600" y="157" fill="#fff" font-size="56" font-weight="900" text-anchor="middle" letter-spacing="1">BLACK FRIDAY <tspan fill="#ff344c">BOOST</tspan></text>
+ <text x="600" y="292" fill="url(#red)" stroke="#6d061b" stroke-width="3" paint-order="stroke" font-size="150" font-weight="1000" text-anchor="middle" letter-spacing="-5" filter="url(#shadow)">70% OFF</text>
+ <rect x="300" y="325" width="600" height="58" rx="15" fill="#061c37" stroke="url(#blue)" stroke-width="4"/>
+ <text x="600" y="363" fill="#f4fbff" font-size="30" font-weight="900" text-anchor="middle" font-style="italic">+ 20X LEVERAGE ON ALL CHALLENGES</text>
+ <text x="600" y="411" fill="#91a9c6" font-size="16" font-weight="700" text-anchor="middle" letter-spacing="3">MERLIJN THE TRADER × BITFUNDED</text>
+</g></svg>
