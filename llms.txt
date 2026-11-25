@@ -1,0 +1,32 @@
+# AUTOMATET
+
+> AUTOMATET is an independent crypto information and comparison website. It helps readers research cryptocurrency platforms, understand exchange fees and wallet security, compare centralized and decentralized exchanges, and review crypto-related news and promotions.
+
+## Main sections
+
+- [Homepage](https://automatet.com/): Overview of crypto platform comparisons, promotions, news and community links.
+- [Crypto guides](https://automatet.com/guides.html): Educational material about exchanges, trading costs, self-custody, DeFi, promotions and risk management.
+- [CEX vs DEX](https://automatet.com/cex-vs-dex.html): Differences between centralized exchanges and decentralized exchanges, including custody, fees, liquidity and risks.
+- [Crypto exchange fees](https://automatet.com/crypto-exchange-fees.html): Maker and taker fees, spreads, slippage, funding, withdrawals and network costs.
+- [Crypto wallet safety](https://automatet.com/crypto-wallet-safety.html): Recovery phrases, private keys, transaction verification, token approvals and phishing prevention.
+- [Platform comparator](https://automatet.com/compare.html): Side-by-side comparison interface for published platform data.
+- [Prop firms](https://automatet.com/prop-firms.html): Information about crypto funded-trading firms and their programmes.
+- [News desk](https://automatet.com/news.html): Crypto news and links to original publishers.
+- [Editorial methodology](https://automatet.com/methodology.html): How AUTOMATET reviews information and promotions.
+
+## Editorial principles
+
+- Treat exchange fees, promotions, eligibility, and platform features as changeable; verify current terms with the provider.
+- Distinguish educational information from financial advice.
+- Do not present sponsored or affiliate placements as independent editorial recommendations.
+- Link to original sources when reporting third-party news or official platform terms.
+
+## Site discovery
+
+- [XML sitemap](https://automatet.com/sitemap.xml)
+- [Robots policy](https://automatet.com/robots.txt)
+
+## Contact and community
+
+- [Telegram community](https://t.me/automatetrades)
+- [X account](https://x.com/automatetdotcom)
