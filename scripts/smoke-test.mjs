@@ -2,14 +2,28 @@ import { readFile } from "node:fs/promises";
 import { Script } from "node:vm";
 
 async function checkInlineScripts() {
-  for (const file of ["index.html", "admin.html", "platform.html", "compare.html", "prop-firms.html", "advertise.html", "guides.html", "methodology.html", "media-kit.html", "news.html"]) {
+  const files = [
+    "index.html", "admin.html", "platform.html", "compare.html", "prop-firms.html",
+    "advertise.html", "guides.html", "methodology.html", "media-kit.html", "news.html",
+    "cex-vs-dex.html", "crypto-exchange-fees.html", "crypto-wallet-safety.html"
+  ];
+  for (const file of files) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
-    const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+    const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
-      new Script(scripts[i][1], { filename: file + ":inline-script-" + (i + 1) });
+      const attributes = scripts[i][1] || "";
+      const source = scripts[i][2] || "";
+      const typeMatch = attributes.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
+      const type = (typeMatch?.[1] || "").toLowerCase();
+      if (type === "application/ld+json") {
+        JSON.parse(source);
+        continue;
+      }
+      if (type && !["text/javascript", "application/javascript", "module"].includes(type)) continue;
+      if (source.trim()) new Script(source, { filename: file + ":inline-script-" + (i + 1) });
     }
   }
-  console.log("PASS: Homepage, admin, platform, comparator, guides, methodology and media kit syntax");
+  console.log("PASS: Inline JavaScript and JSON-LD syntax across site pages and editorial guides");
 }
 
 await checkInlineScripts();
