@@ -1,4 +1,19 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+
+# Allow ChatGPT Search discovery while keeping admin pages out of search.
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin.html
+
+# User-initiated ChatGPT page visits.
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin.html
+
+# Do not allow model-training crawler access.
+User-agent: GPTBot
+Disallow: /
+
 Sitemap: https://automatet.com/sitemap.xml
