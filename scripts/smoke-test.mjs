@@ -9,11 +9,11 @@ async function checkInlineScripts() {
   ];
   for (const file of files) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
-    const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
     for (let i = 0; i < scripts.length; i++) {
       const attributes = scripts[i][1] || "";
       const source = scripts[i][2] || "";
-      const typeMatch = attributes.match(/\\btype\\s*=\\s*["']([^"']+)["']/i);
+      const typeMatch = attributes.match(/\btype\s*=\s*["']([^"']+)["']/i);
       const type = (typeMatch?.[1] || "").toLowerCase();
       if (type === "application/ld+json") {
         JSON.parse(source);
