@@ -129,7 +129,7 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const xml = fs.readFileSync('sitemap.xml', 'utf8');
-          const urlList = [...xml.matchAll(/<loc>(https:\/\/automatet\.com\/[^<]+)<\/loc>/g)].map(([, url]) => url);
+          const urlList = [...xml.matchAll(/<loc>(https:\/\/automatet\.com\/[^<]*)<\/loc>/g)].map(([, url]) => url);
           if (!urlList.length) throw new Error('No AUTOMATET URLs found in sitemap.xml');
           const key = '41f1038dc07e821730199baf63951f8e';
           const response = await fetch('https://api.indexnow.org/indexnow', {
